@@ -104,29 +104,29 @@ export async function POST(request: Request) {
         resultId,
         message: 'Result saved successfully' 
       });
-    } catch (saveError: any) {
+    } catch (saveError: unknown) {
       console.error('Error in saveResult function:', saveError);
       return NextResponse.json(
         { 
           success: false, 
           error: 'Database operation failed', 
-          details: saveError.message || 'Unknown database error',
-          stack: process.env.NODE_ENV !== 'production' ? saveError.stack : undefined
+          details: saveError instanceof Error ? saveError.message : 'Unknown database error',
+          stack: process.env.NODE_ENV !== 'production' && saveError instanceof Error ? saveError.stack : undefined
         },
         { status: 500 }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error saving result:', error);
-    if (error.stack) {
+    if (error instanceof Error && error.stack) {
       console.error('Error stack:', error.stack);
     }
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to save result', 
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: process.env.NODE_ENV !== 'production' && error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface QuestionnaireData {
@@ -20,18 +20,66 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = useState(1);
   const [progress, setProgress] = useState(0);
+  
+  // Clean up localStorage if debug data is detected on component mount
+  useEffect(() => {
+    try {
+      const localData = localStorage.getItem('questionnaireData');
+      if (localData) {
+        const parsed = JSON.parse(localData);
+        // Check if all values are 1 (debug data)
+        const allOnes = 
+          (parsed.section1 && parsed.section1.every((val: number) => val === 1)) &&
+          (parsed.section2 && parsed.section2.every((val: number) => val === 1)) &&
+          (parsed.section3 && parsed.section3.every((val: number) => val === 1)) &&
+          (parsed.section4 && parsed.section4.every((val: number) => val === 1));
+        
+        if (allOnes) {
+          localStorage.removeItem('questionnaireData');
+          console.log('Found and removed debug data from localStorage');
+        }
+      }
+    } catch (e) {
+      console.error('Error checking localStorage for debug data:', e);
+    }
+  }, []);
+  
+  // Ensure we use cleaned context data or zeros
+  const validContextData = contextData && 
+    !(contextData.section1.every(val => val === 1) && 
+      contextData.section2.every(val => val === 1) && 
+      contextData.section3.every(val => val === 1) && 
+      contextData.section4.every(val => val === 1));
+      
   const [data, setData] = useState<QuestionnaireData>({
-    section1: contextData?.section1 || Array(9).fill(0),
-    section2: contextData?.section2 || Array(37).fill(0),
-    section3: contextData?.section3 || Array(14).fill(0),
-    section4: contextData?.section4 || Array(29).fill(0),
+    section1: validContextData ? contextData.section1 : Array(9).fill(0),
+    section2: validContextData ? contextData.section2 : Array(37).fill(0),
+    section3: validContextData ? contextData.section3 : Array(14).fill(0),
+    section4: validContextData ? contextData.section4 : Array(29).fill(0),
   });
+  
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const initialDataLoadedRef = useRef(false);
+  const previousDataRef = useRef<QuestionnaireData | null>(null);
 
   // If we have context data, update our local state
   useEffect(() => {
-    if (contextData) {
-      setData(contextData);
+    if (contextData && !initialDataLoadedRef.current) {
+      // Validate contextData - don't use if all values are 1 (debug data)
+      const isDebugData = 
+        contextData.section1.every(val => val === 1) && 
+        contextData.section2.every(val => val === 1) && 
+        contextData.section3.every(val => val === 1) && 
+        contextData.section4.every(val => val === 1);
+      
+      if (!isDebugData) {
+        setData(contextData);
+        initialDataLoadedRef.current = true;
+        previousDataRef.current = contextData;
+      } else {
+        console.log('Ignoring debug data from context');
+        initialDataLoadedRef.current = true;
+      }
     }
   }, [contextData]);
 
@@ -57,13 +105,23 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
 
   // Save data to context when it changes
   useEffect(() => {
-    // Avoid saving empty initial data
-    if (data.section1.some(val => val !== 0) || 
-        data.section2.some(val => val !== 0) || 
-        data.section3.some(val => val !== 0) || 
-        data.section4.some(val => val !== 0)) {
-      setQuestionnaireData(data);
+    // Skip empty initial data
+    if (!data.section1.some(val => val !== 0) && 
+        !data.section2.some(val => val !== 0) && 
+        !data.section3.some(val => val !== 0) && 
+        !data.section4.some(val => val !== 0)) {
+      return;
     }
+    
+    // Skip if data hasn't changed from previous save
+    if (previousDataRef.current && 
+        JSON.stringify(previousDataRef.current) === JSON.stringify(data)) {
+      return;
+    }
+    
+    // Save data to context and update our reference
+    previousDataRef.current = JSON.parse(JSON.stringify(data));
+    setQuestionnaireData(data);
   }, [data, setQuestionnaireData]);
 
   const handleNext = () => {
@@ -86,13 +144,6 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
     }
   };
 
-  const handleBack = () => {
-    if (currentSection > 1) {
-      setCurrentSection(prev => prev - 1);
-      window.scrollTo(0, 0);
-    }
-  };
-
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
@@ -104,15 +155,37 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       // If we have a valid participant ID, save to database
       if (databaseParticipantId && databaseParticipantId > 0) {
         try {
+          // Transform data to individual columns for each question
+          const transformedData: Record<string, number> = {
+            participantId: databaseParticipantId,
+          };
+          
+          // Convert section1 array to individual columns (section1.1, section1.2, etc.)
+          data.section1.forEach((value, index) => {
+            transformedData[`section1.${index + 1}`] = value;
+          });
+          
+          // Convert section2 array to individual columns
+          data.section2.forEach((value, index) => {
+            transformedData[`section2.${index + 1}`] = value;
+          });
+          
+          // Convert section3 array to individual columns
+          data.section3.forEach((value, index) => {
+            transformedData[`section3.${index + 1}`] = value;
+          });
+          
+          // Convert section4 array to individual columns
+          data.section4.forEach((value, index) => {
+            transformedData[`section4.${index + 1}`] = value;
+          });
+
           const response = await fetch('/api/questionnaire', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-              participantId: databaseParticipantId,
-              ...data
-            }),
+            body: JSON.stringify(transformedData),
           });
 
           const responseData = await response.json();
@@ -172,7 +245,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Çılgın partilerden hoşlanırım.",
       "Rotası belli olmayan ve zaman sınırı olmayan bir geziye çıkmak isterim.",
       "Heyecan verici bir şekilde ne yapacağı belli olmayan arkadaşları tercih ederim.",
-      "Lütfen bu soruyu \"4=katılıyorum\" olarak işaretleyiniz.",
+      "Lütfen bu soruyu &quot;4=katılıyorum&quot; olarak işaretleyiniz.",
       "Bungee-jumping yapmayı denemek isterim.",
       "Yasadışı olsa bile yeni ve heyecan verici deneyimleri yaşamayı severim."
     ];
@@ -195,15 +268,15 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         
         {questions.map((question, index) => (
           <div key={`s1-${index}`} className="bg-gray-50 border border-gray-300 rounded-xl shadow-sm p-6">
-            <p className="font-medium text-gray-900 mb-4">
+            <p className="font-medium text-gray-900 mb-[10px]">
               {index + 1}. {question}
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-5">
               {options.map((option) => (
                 <label 
                   key={`s1-${index}-${option.value}`}
                   className={`
-                    flex items-center justify-between gap-2 p-3 rounded-lg border
+                    flex items-center justify-between gap-2 py-3 px-[10px] rounded-lg border
                     ${data.section1[index] === option.value 
                       ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' 
                       : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -285,21 +358,21 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Bölüm 2</h3>
         <p className="text-gray-700 mb-6">
           Aşağıda size verilen her maddeyi okuyunuz ve her madde için olabildiğince
-          dürüst bir şekilde "Sizin karakterinizi ne kadar yansıtıyor veya sizin
-          için ne kadar doğru?" sorusunu cevaplayınız.
+          dürüst bir şekilde &quot;Sizin karakterinizi ne kadar yansıtıyor veya sizin
+          için ne kadar doğru?&quot; sorusunu cevaplayınız.
         </p>
         
         {questions.map((question, index) => (
           <div key={`s2-${index}`} className="bg-gray-50 border border-gray-300 rounded-xl shadow-sm p-6">
-            <p className="font-medium text-gray-900 mb-4">
+            <p className="font-medium text-gray-900 mb-[10px]">
               {index + 1}. {question}
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-5">
               {options.map((option) => (
                 <label 
                   key={`s2-${index}-${option.value}`}
                   className={`
-                    flex items-center justify-between gap-2 p-3 rounded-lg border
+                    flex items-center justify-between gap-2 py-3 px-[10px] rounded-lg border
                     ${data.section2[index] === option.value 
                       ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' 
                       : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -337,7 +410,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Gelecekteki sonuçlara ulaşmak için anlık mutluluğumu ya da esenliğimi feda etmeye istekliyimdir.",
       "Olumsuz sonuç uzun yıllar ortaya çıkmayacak olsa da olumsuz sonuçlarla ilgili uyarıları ciddiye almanın önemli olduğunu düşünürüm.",
       "Daha sonra sonuç alınan önemli bir davranış sergilemenin şimdi sonuç alınan daha az önemli bir davranış sergilemekten daha önemli olduğunu düşünürüm.",
-      "Lütfen bu soruyu \"6\" olarak işaretleyiniz.",
+      "Lütfen bu soruyu &quot;6&quot; olarak işaretleyiniz.",
       "Gelecekteki sorunlar hakkındaki uyarıları genellikle görmezden gelirim çünkü sorunlar kriz düzeyine ulaşmadan önce çözüleceklerini düşünürüm.",
       "Gelecekteki sonuçlarla daha ilerideki bir zamanda uğraşılabileceği için şimdi fedakârlık yapmanın gereksiz olduğunu düşünürüm.",
       "Gelecekteki sorunlarla daha ilerideki bir vakitte ilgileneceğimi düşünerek sadece anlık kaygılarımı gidermek için eyleme geçerim.",
@@ -350,14 +423,14 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Bölüm 3</h3>
         <p className="text-gray-700 mb-6">
           Aşağıda size sunulan her bir ifadenin sizin için geçerli olup olmadığını lütfen belirtin. 
-          Eğer ifade sizin için son derece geçersizse (size hiç benzemiyorsa) "1" seçeneğini; 
-          eğer ifade sizin için tamamen geçerliyse (size oldukça benziyorsa) "7" seçeneğini işaretleyin.
+          Eğer ifade sizin için son derece geçersizse (size hiç benzemiyorsa) &quot;1&quot; seçeneğini; 
+          eğer ifade sizin için tamamen geçerliyse (size oldukça benziyorsa) &quot;7&quot; seçeneğini işaretleyin.
           Elbette, uç noktaların arasına düşüyorsanız da aradaki sayıları kullanabilirsiniz.
         </p>
         
         {questions.map((question, index) => (
           <div key={`s3-${index}`} className="bg-gray-50 border border-gray-300 rounded-xl shadow-sm p-6">
-            <p className="font-medium text-gray-900 mb-4">
+            <p className="font-medium text-gray-900 mb-[10px]">
               {index + 1}. {question}
             </p>
             <div className="flex flex-col space-y-2">
@@ -370,10 +443,10 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
                   <label 
                     key={`s3-${index}-${value}`}
                     className={`
-                      flex flex-col items-center justify-center p-3 rounded-lg border
+                      flex flex-col items-center justify-center p-3 rounded-lg
                       ${data.section3[index] === value 
-                        ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' 
-                        : 'bg-white border-gray-200 hover:bg-gray-50'
+                        ? 'bg-blue-50 ring-2 ring-blue-200' 
+                        : 'hover:bg-gray-50'
                       } 
                       cursor-pointer transition-all
                     `}
@@ -426,7 +499,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "İnsanlara yönelik ilk izlenimimde yanılmam.",
       "Çok mecbur olsam bile yalan söylemem.",
       "Hiçbir kötü alışkanlığım yoktur.",
-      "Lütfen bu soruda \"1-Hiç uygun değil\" seçeneğini işaretleyiniz.",
+      "Lütfen bu soruda &quot;1-Hiç uygun değil&quot; seçeneğini işaretleyiniz.",
       "Yaptığım işlerde her zaman doğru adımlar atarım.",
       "Asla cinsel içerikli kitap veya dergi okumam.",
       "Kesinlikle küfür etmem."
@@ -450,15 +523,15 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         
         {questions.map((question, index) => (
           <div key={`s4-${index}`} className="bg-gray-50 border border-gray-300 rounded-xl shadow-sm p-6">
-            <p className="font-medium text-gray-900 mb-4">
+            <p className="font-medium text-gray-900 mb-[10px]">
               {index + 1}. {question}
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-5">
               {options.map((option) => (
                 <label 
                   key={`s4-${index}-${option.value}`}
                   className={`
-                    flex items-center justify-between gap-2 p-3 rounded-lg border
+                    flex items-center justify-between gap-2 py-3 px-[10px] rounded-lg border
                     ${data.section4[index] === option.value 
                       ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-200' 
                       : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -487,7 +560,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="mx-auto max-w-4xl bg-white rounded-xl shadow-sm p-6">
+      <div className="mx-auto max-w-3xl bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Anket</h2>
         
         {/* Debug button - only visible in development */}
@@ -518,32 +591,22 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
           </div>
         )}
         
-        {/* Current section */}
-        {currentSection === 1 && renderSection1()}
-        {currentSection === 2 && renderSection2()}
-        {currentSection === 3 && renderSection3()}
-        {currentSection === 4 && renderSection4()}
+        {/* Current section - made the width consistent across all sections */}
+        <div className="w-full mx-auto" style={{ maxWidth: "700px" }}>
+          {currentSection === 1 && renderSection1()}
+          {currentSection === 2 && renderSection2()}
+          {currentSection === 3 && renderSection3()}
+          {currentSection === 4 && renderSection4()}
+        </div>
         
         {/* Navigation buttons */}
-        <div className="mt-8 flex justify-between">
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={currentSection === 1 || isSubmitting}
-            className={`px-5 py-2 rounded-md text-sm font-medium 
-              ${currentSection === 1 
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-          >
-            Geri
-          </button>
-          
+        <div className="mt-16 flex justify-center" style={{ marginTop: "60px" }}>
           <button
             type="button"
             onClick={handleNext}
             disabled={isSubmitting}
             className="px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            style={{ padding: '8px 20px' }}
           >
             {isSubmitting 
               ? 'Gönderiliyor...' 

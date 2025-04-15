@@ -31,16 +31,13 @@ export async function GET() {
       success: true,
       message: 'Successfully removed department column from participants table'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Migration error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Migration failed',
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: 'Migration failed',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 } 

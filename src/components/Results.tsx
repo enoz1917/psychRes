@@ -2,7 +2,6 @@
 
 import { useAppContext } from '@/contexts/AppContext';
 import { useState, useEffect } from 'react';
-import { getDemographicByParticipantId } from '@/lib/db';
 
 interface Result {
   taskType: string;
@@ -13,15 +12,12 @@ interface Result {
 }
 
 export default function Results() {
-  const { demographicData, participantData, databaseParticipantId, questionnaireData, results: contextResults } = useAppContext();
+  const { databaseParticipantId, results: contextResults } = useAppContext();
   const [isOfflineMode, setIsOfflineMode] = useState(false);
-  const [downloadClicked, setDownloadClicked] = useState(false);
-  const [databaseDemographicData, setDatabaseDemographicData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [debugResults, setDebugResults] = useState<any>(null);
+  const [debugResults, setDebugResults] = useState<Record<string, unknown> | null>(null);
   const [debugMode, setDebugMode] = useState(false);
-  const [results, setResults] = useState<Result[]>([]);
   const [noResultsError, setNoResultsError] = useState<boolean>(false);
 
   // Save results to database when component mounts
@@ -30,7 +26,6 @@ export default function Results() {
       try {
         // First try to use results from context
         if (contextResults && contextResults.length > 0) {
-          setResults(contextResults);
           // Continue with database save using context results
           const resultsWithParticipantId = contextResults.map(result => ({
             ...result,
@@ -51,7 +46,6 @@ export default function Results() {
         }
 
         const parsedResults = JSON.parse(storedResults) as Result[];
-        setResults(parsedResults);
 
         // Validate results
         if (!parsedResults.length) {
@@ -122,7 +116,6 @@ export default function Results() {
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.demographic) {
-              setDatabaseDemographicData(data.demographic);
               console.log('Fetched demographic data from database:', data.demographic);
             }
           }
@@ -138,35 +131,6 @@ export default function Results() {
 
     fetchDemographicData();
   }, [databaseParticipantId]);
-
-  const handleDownload = () => {
-    // Use database demographic data if available, otherwise use context data
-    const finalDemographicData = databaseDemographicData || demographicData;
-    
-    const data = {
-      participantId: databaseParticipantId,
-      participantData,
-      demographicData: finalDemographicData,
-      results: results.map(result => ({
-        taskType: result.taskType,
-        groupIndex: result.groupIndex,
-        selectedWords: result.selectedWords,
-        isTimeUp: result.isTimeUp
-      })),
-      questionnaire: questionnaireData
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `results_${databaseParticipantId || 'offline'}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setDownloadClicked(true);
-  };
 
   return (
     <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
@@ -218,18 +182,10 @@ export default function Results() {
             Veriler yükleniyor...
           </p>
         ) : (
-          <p className="text-lg text-gray-700">
-            Katılımınız için teşekkür ederiz. Sonuçlarınızı indirmek için aşağıdaki butona tıklayabilirsiniz.
+          <p className="text-lg text-gray-700 text-center">
+            Katılımınız için teşekkür ederiz.
           </p>
         )}
-        
-        <button
-          onClick={handleDownload}
-          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          disabled={downloadClicked || isLoading}
-        >
-          {downloadClicked ? 'İndirildi' : 'Sonuçları İndir'}
-        </button>
       </div>
     </div>
   );

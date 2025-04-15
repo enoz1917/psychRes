@@ -42,13 +42,19 @@ export async function POST(request: Request) {
     const participantId = await saveParticipant(participantData);
     
     return NextResponse.json({ success: true, participantId });
-  } catch (error: any) {
-    console.error('Error saving participant data:', error);
+  } catch (error: unknown) {
+    console.error('Error saving participant:', error);
+    // Log more details about the error if available
+    if (error instanceof Error && error.stack) {
+      console.error('Error stack:', error.stack);
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to save participant data', 
-        details: error.message || 'Unknown error'
+        error: 'Failed to save participant', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );

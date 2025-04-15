@@ -155,14 +155,115 @@ export async function initDatabase() {
       // Create questionnaires table
       console.log('Creating questionnaires table...');
       try {
+        // First drop the old table if it exists
+        await sql`
+          DROP TABLE IF EXISTS questionnaires CASCADE
+        `;
+        console.log('Dropped old questionnaires table if it existed');
+        
+        // Create new questionnaires table with individual columns
         await sql`
           CREATE TABLE IF NOT EXISTS questionnaires (
             id SERIAL PRIMARY KEY,
             participant_id INTEGER NOT NULL REFERENCES participants(id),
-            section1 INTEGER[] NOT NULL,
-            section2 INTEGER[] NOT NULL,
-            section3 INTEGER[] NOT NULL,
-            section4 INTEGER[] NOT NULL,
+            
+            -- Section 1 columns (9 questions)
+            "section1.1" INTEGER,
+            "section1.2" INTEGER,
+            "section1.3" INTEGER,
+            "section1.4" INTEGER,
+            "section1.5" INTEGER,
+            "section1.6" INTEGER,
+            "section1.7" INTEGER,
+            "section1.8" INTEGER,
+            "section1.9" INTEGER,
+            
+            -- Section 2 columns (37 questions)
+            "section2.1" INTEGER,
+            "section2.2" INTEGER,
+            "section2.3" INTEGER,
+            "section2.4" INTEGER,
+            "section2.5" INTEGER,
+            "section2.6" INTEGER,
+            "section2.7" INTEGER,
+            "section2.8" INTEGER,
+            "section2.9" INTEGER,
+            "section2.10" INTEGER,
+            "section2.11" INTEGER,
+            "section2.12" INTEGER,
+            "section2.13" INTEGER,
+            "section2.14" INTEGER,
+            "section2.15" INTEGER,
+            "section2.16" INTEGER,
+            "section2.17" INTEGER,
+            "section2.18" INTEGER,
+            "section2.19" INTEGER,
+            "section2.20" INTEGER,
+            "section2.21" INTEGER,
+            "section2.22" INTEGER,
+            "section2.23" INTEGER,
+            "section2.24" INTEGER,
+            "section2.25" INTEGER,
+            "section2.26" INTEGER,
+            "section2.27" INTEGER,
+            "section2.28" INTEGER,
+            "section2.29" INTEGER,
+            "section2.30" INTEGER,
+            "section2.31" INTEGER,
+            "section2.32" INTEGER,
+            "section2.33" INTEGER,
+            "section2.34" INTEGER,
+            "section2.35" INTEGER,
+            "section2.36" INTEGER,
+            "section2.37" INTEGER,
+            
+            -- Section 3 columns (14 questions)
+            "section3.1" INTEGER,
+            "section3.2" INTEGER,
+            "section3.3" INTEGER,
+            "section3.4" INTEGER,
+            "section3.5" INTEGER,
+            "section3.6" INTEGER,
+            "section3.7" INTEGER,
+            "section3.8" INTEGER,
+            "section3.9" INTEGER,
+            "section3.10" INTEGER,
+            "section3.11" INTEGER,
+            "section3.12" INTEGER,
+            "section3.13" INTEGER,
+            "section3.14" INTEGER,
+            
+            -- Section 4 columns (29 questions)
+            "section4.1" INTEGER,
+            "section4.2" INTEGER,
+            "section4.3" INTEGER,
+            "section4.4" INTEGER,
+            "section4.5" INTEGER,
+            "section4.6" INTEGER,
+            "section4.7" INTEGER,
+            "section4.8" INTEGER,
+            "section4.9" INTEGER,
+            "section4.10" INTEGER,
+            "section4.11" INTEGER,
+            "section4.12" INTEGER,
+            "section4.13" INTEGER,
+            "section4.14" INTEGER,
+            "section4.15" INTEGER,
+            "section4.16" INTEGER,
+            "section4.17" INTEGER,
+            "section4.18" INTEGER,
+            "section4.19" INTEGER,
+            "section4.20" INTEGER,
+            "section4.21" INTEGER,
+            "section4.22" INTEGER,
+            "section4.23" INTEGER,
+            "section4.24" INTEGER,
+            "section4.25" INTEGER,
+            "section4.26" INTEGER,
+            "section4.27" INTEGER,
+            "section4.28" INTEGER,
+            "section4.29" INTEGER,
+            
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             UNIQUE(participant_id),
             CONSTRAINT fk_participant
@@ -171,7 +272,7 @@ export async function initDatabase() {
               ON DELETE CASCADE
           )
         `;
-        console.log('Questionnaires table created successfully');
+        console.log('Questionnaires table created successfully with individual columns');
       } catch (questionnairesError) {
         console.error('Error creating questionnaires table:', questionnairesError);
         throw questionnairesError;
@@ -459,10 +560,7 @@ export async function getDemographicByParticipantId(participantId: number) {
 
 export async function saveQuestionnaire(
   participantId: number,
-  section1: number[],
-  section2: number[],
-  section3: number[],
-  section4: number[]
+  questionData: Record<string, number>
 ) {
   await initDatabase();
   try {
@@ -471,32 +569,58 @@ export async function saveQuestionnaire(
       SELECT * FROM questionnaires WHERE participant_id = ${participantId}
     `;
 
+    // Extract column names and values from the questionData
+    const columnNames = Object.keys(questionData)
+      .filter(key => key !== 'participantId') // Exclude participantId from columns
+      .map(key => `"${key}"`) // Wrap column names in quotes
+      .join(', ');
+    
+    const columnValues = Object.keys(questionData)
+      .filter(key => key !== 'participantId') // Exclude participantId from values
+      .map(key => questionData[key]);
+
+    // Create the dynamic set clause for UPDATE
+    const setPairs = Object.keys(questionData)
+      .filter(key => key !== 'participantId') // Exclude participantId
+      .map((key, index) => `"${key}" = $${index + 1}`)
+      .join(', ');
+
     let result;
     if (existingQuestionnaire && existingQuestionnaire.length > 0) {
-      // Update existing questionnaire
-      const updatedQuestionnaire = await sql`
+      // Update existing questionnaire with dynamic SQL
+      const updateQuery = `
         UPDATE questionnaires
-        SET 
-          section1 = ${section1},
-          section2 = ${section2},
-          section3 = ${section3},
-          section4 = ${section4}
-        WHERE participant_id = ${participantId}
+        SET ${setPairs}, created_at = NOW()
+        WHERE participant_id = $${columnValues.length + 1}
         RETURNING id, participant_id
       `;
+      
+      const updatedQuestionnaire = await pool.query(
+        updateQuery,
+        [...columnValues, participantId]
+      );
+      
       console.log('Questionnaire updated successfully');
-      result = updatedQuestionnaire[0] || { id: null, participant_id: participantId };
+      result = updatedQuestionnaire.rows[0] || { id: null, participant_id: participantId };
     } else {
-      // Create new questionnaire
-      const newQuestionnaire = await sql`
+      // Create new questionnaire with dynamic SQL
+      const placeholders = columnValues.map((_, index) => `$${index + 1}`).join(', ');
+      
+      const insertQuery = `
         INSERT INTO questionnaires
-          (participant_id, section1, section2, section3, section4)
+        (participant_id, ${columnNames})
         VALUES
-          (${participantId}, ${section1}, ${section2}, ${section3}, ${section4})
+        ($${columnValues.length + 1}, ${placeholders})
         RETURNING id, participant_id
       `;
+      
+      const newQuestionnaire = await pool.query(
+        insertQuery,
+        [...columnValues, participantId]
+      );
+      
       console.log('Questionnaire saved successfully');
-      result = newQuestionnaire[0] || { id: null, participant_id: participantId };
+      result = newQuestionnaire.rows[0] || { id: null, participant_id: participantId };
     }
     
     // Ensure we always return an object with an id property
@@ -525,7 +649,42 @@ export async function getQuestionnaireByParticipantId(participantId: number) {
     `;
     
     // Return the first result if it exists
-    return questionnaire && questionnaire.length > 0 ? questionnaire[0] : null;
+    if (questionnaire && questionnaire.length > 0) {
+      const result = questionnaire[0];
+      
+      // Convert the individual question columns back to section arrays for compatibility
+      const section1 = [];
+      const section2 = [];
+      const section3 = [];
+      const section4 = [];
+      
+      for (let i = 1; i <= 9; i++) {
+        section1.push(result[`section1.${i}`] || 0);
+      }
+      
+      for (let i = 1; i <= 37; i++) {
+        section2.push(result[`section2.${i}`] || 0);
+      }
+      
+      for (let i = 1; i <= 14; i++) {
+        section3.push(result[`section3.${i}`] || 0);
+      }
+      
+      for (let i = 1; i <= 29; i++) {
+        section4.push(result[`section4.${i}`] || 0);
+      }
+      
+      // Return both the individual questions and the section arrays
+      return {
+        ...result,
+        section1,
+        section2,
+        section3,
+        section4
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error getting questionnaire by participant ID:', error);
     throw error;

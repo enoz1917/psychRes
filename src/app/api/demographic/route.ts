@@ -4,6 +4,13 @@ import { saveDemographic, initDatabase, getDemographicByParticipantId } from '@/
 // Initialize the database when the API is called
 let databaseInitialized = false;
 
+// Add error interface
+interface DatabaseError extends Error {
+  code?: string;
+  cause?: unknown;
+  stack?: string;
+}
+
 export async function POST(request: Request) {
   try {
     // Initialize the database if not already done
@@ -69,22 +76,22 @@ export async function POST(request: Request) {
       demographicId,
       message: 'Demographic data saved successfully' 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error saving demographic data:', error);
     // Log more details about the error
-    if (error.stack) {
+    if (error instanceof Error && error.stack) {
       console.error('Error stack:', error.stack);
     }
-    if (error.cause) {
-      console.error('Error cause:', error.cause);
+    if (error instanceof Error && 'cause' in error) {
+      console.error('Error cause:', (error as DatabaseError).cause);
     }
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to save demographic data', 
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: process.env.NODE_ENV !== 'production' && error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
@@ -148,13 +155,13 @@ export async function GET(request: Request) {
         monthlyIncome: demographic.monthly_income,
       } : null
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error getting demographic data:', error);
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to get demographic data', 
-        details: error.message || 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }
     );

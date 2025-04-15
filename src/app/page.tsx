@@ -7,6 +7,7 @@ import DemographicForm from '@/components/DemographicForm';
 import WordSelection from '@/components/WordSelection';
 import Results from '@/components/Results';
 import Questionnaire from '@/components/Questionnaire';
+import { InitialInstructions, PracticeInstructions } from '@/components/Instructions';
 
 interface DemographicData {
   gender: string;
@@ -59,8 +60,8 @@ function App() {
   
   const [showParticipantForm, setShowParticipantForm] = useState(true);
   const [showDemographicForm, setShowDemographicForm] = useState(false);
-  const [showInstructions2, setShowInstructions2] = useState(false);
-  const [showInstructions3, setShowInstructions3] = useState(false);
+  const [showInitialInstructions, setShowInitialInstructions] = useState(false);
+  const [showPracticeInstructions, setShowPracticeInstructions] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
 
@@ -70,8 +71,8 @@ function App() {
       isCompleted,
       showParticipantForm,
       showDemographicForm,
-      showInstructions2,
-      showInstructions3,
+      showInitialInstructions,
+      showPracticeInstructions,
       showQuestionnaire,
       questionnaireCompleted,
       resultsLength: results.length
@@ -80,12 +81,21 @@ function App() {
     isCompleted, 
     showParticipantForm, 
     showDemographicForm, 
-    showInstructions2, 
-    showInstructions3, 
+    showInitialInstructions, 
+    showPracticeInstructions, 
     showQuestionnaire, 
     questionnaireCompleted,
     results.length
   ]);
+
+  // Ensure scrolling to top on component transitions
+  useEffect(() => {
+    // Scroll to top when isCompleted becomes true
+    if (isCompleted) {
+      console.log("Task completed, scrolling to top");
+      window.scrollTo(0, 0);
+    }
+  }, [isCompleted]);
 
   // Check if questionnaire is already completed
   useEffect(() => {
@@ -129,12 +139,14 @@ function App() {
     setDatabaseParticipantId(participantId);
     setShowParticipantForm(false);
     setShowDemographicForm(true);
+    window.scrollTo(0, 0);
   };
 
   const handleDemographicSubmit = (data: DemographicData) => {
     setDemographicData(data);
     setShowDemographicForm(false);
-    setShowInstructions2(true);
+    setShowInitialInstructions(true);
+    window.scrollTo(0, 0);
     
     // Reset any previous task data to ensure fresh start
     resetTask();
@@ -149,13 +161,15 @@ function App() {
     console.log("Demographic form submitted, resetting task state for fresh word selection");
   };
 
-  const handleInstructions2Continue = () => {
-    setShowInstructions2(false);
-    setShowInstructions3(true);
+  const handleInitialInstructionsContinue = () => {
+    setShowInitialInstructions(false);
+    setShowPracticeInstructions(true);
+    window.scrollTo(0, 0);
   };
 
-  const handleInstructions3Continue = () => {
-    setShowInstructions3(false);
+  const handlePracticeInstructionsContinue = () => {
+    setShowPracticeInstructions(false);
+    window.scrollTo(0, 0);
     
     // Reset the task to ensure a clean state for the word selection
     resetTask();
@@ -163,7 +177,7 @@ function App() {
     // Make sure isCompleted is false
     setIsCompleted(false);
     
-    console.log("Instructions 3 complete, starting word selection task");
+    console.log("Practice instructions complete, starting word selection task");
   };
 
   const handleQuestionnaireSubmit = (data: QuestionnaireData) => {
@@ -171,6 +185,7 @@ function App() {
     setQuestionnaireData(data);
     setQuestionnaireCompleted(true);
     setShowQuestionnaire(false);
+    window.scrollTo(0, 0);
   };
 
   if (showParticipantForm) {
@@ -181,89 +196,23 @@ function App() {
     return <DemographicForm onSubmit={handleDemographicSubmit} />;
   }
 
-  if (showInstructions2) {
-    return (
-      <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto space-y-8 bg-white p-8 rounded-xl shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Yönerge</h2>
-          <p className="text-lg text-gray-700">
-            Bu çalışmada size bazı kelimeler gösterilecektir. Sizden istenen, bu kelimelerden anlamlı bir cümle oluşturmanızdır.
-          </p>
-          <p className="text-lg text-gray-700">
-            Her bir kelime grubu için 13 saniye süreniz olacaktır. Bu süre içinde kelimeleri seçerek anlamlı bir cümle oluşturmaya çalışın.
-          </p>
-          <p className="text-lg text-gray-700">
-            Süre dolmadan da &quot;Devam Et&quot; butonuna basarak bir sonraki kelime grubuna geçebilirsiniz.
-          </p>
-          <button
-            onClick={handleInstructions2Continue}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Devam Et
-          </button>
-        </div>
-      </div>
-    );
+  if (showInitialInstructions) {
+    return <InitialInstructions onContinue={handleInitialInstructionsContinue} />;
   }
 
-  if (showInstructions3) {
-    return (
-      <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto space-y-8 bg-white p-8 rounded-xl shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Örnek</h2>
-          <p className="text-lg text-gray-700">
-            Örneğin, aşağıdaki kelimelerle karşılaştığınızda:
-          </p>
-          <div className="flex flex-wrap gap-2 my-4">
-            {['kitap', 'okudum', 'ben', 'bir'].map((word) => (
-              <span
-                key={word}
-                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full text-lg"
-              >
-                {word}
-              </span>
-            ))}
-          </div>
-          <p className="text-lg text-gray-700">
-            &quot;Ben bir kitap okudum&quot; şeklinde anlamlı bir cümle oluşturabilirsiniz.
-          </p>
-          <p className="text-lg text-gray-700">
-            Kelimeleri istediğiniz sırada seçebilirsiniz. Seçtiğiniz kelimeler otomatik olarak cümle haline getirilecektir.
-          </p>
-          <button
-            onClick={handleInstructions3Continue}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Başla
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isCompleted && !showQuestionnaire && !questionnaireCompleted) {
-    // Show a transition screen before the questionnaire
-    console.log("Showing transition to questionnaire screen");
-    return (
-      <div className="min-h-screen bg-white py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto space-y-8 bg-white p-8 rounded-xl shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Tebrikler!</h2>
-          <p className="text-lg text-gray-700">
-            Kelime seçim uygulamasını tamamladınız. Şimdi sizden bir anket doldurmanızı rica ediyoruz.
-          </p>
-          <button
-            onClick={() => setShowQuestionnaire(true)}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Ankete Başla
-          </button>
-        </div>
-      </div>
-    );
+  if (showPracticeInstructions) {
+    return <PracticeInstructions onContinue={handlePracticeInstructionsContinue} />;
   }
 
   if (showQuestionnaire) {
     return <Questionnaire onSubmit={handleQuestionnaireSubmit} />;
+  }
+
+  if (isCompleted && !showQuestionnaire && !questionnaireCompleted) {
+    // Skip directly to questionnaire
+    console.log("Task completed, showing questionnaire");
+    setShowQuestionnaire(true);
+    window.scrollTo(0, 0);
   }
 
   if (isCompleted && questionnaireCompleted && hasValidResults) {
@@ -271,7 +220,7 @@ function App() {
   }
 
   // Only show WordSelection if none of the forms or special screens should be shown
-  if (!showParticipantForm && !showDemographicForm && !showInstructions2 && !showInstructions3) {
+  if (!showParticipantForm && !showDemographicForm && !showInitialInstructions && !showPracticeInstructions) {
     console.log("Showing WordSelection component");
     return <WordSelection />;
   }

@@ -45,17 +45,55 @@ export async function POST(request: Request) {
       );
     }
     
-    // Validate questionnaire data
-    if (!body.section1 || !body.section2 || !body.section3 || !body.section4) {
+    // Check if we're receiving an object with individual question keys (section1.1, section1.2, etc.)
+    const hasIndividualQuestions = Object.keys(body).some(key => /^section\d+\.\d+$/.test(key));
+    
+    // Check if we're receiving the old section array format
+    const hasArraySections = 
+      Array.isArray(body.section1) && 
+      Array.isArray(body.section2) && 
+      Array.isArray(body.section3) && 
+      Array.isArray(body.section4);
+    
+    // Prepare data for saving
+    let dataToSave = body;
+    
+    // If we get array sections, convert to individual question format
+    if (hasArraySections && !hasIndividualQuestions) {
+      console.log('Converting from array sections to individual question format');
+      
+      // Validate section array lengths
+      if (body.section1.length !== 9 || body.section2.length !== 37 || 
+          body.section3.length !== 14 || body.section4.length !== 29) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid questionnaire data structure' },
+          { status: 400 }
+        );
+      }
+      
+      // Convert to individual questions
+      dataToSave = { participantId: body.participantId };
+      
+      body.section1.forEach((value: number, index: number) => {
+        dataToSave[`section1.${index + 1}`] = value;
+      });
+      
+      body.section2.forEach((value: number, index: number) => {
+        dataToSave[`section2.${index + 1}`] = value;
+      });
+      
+      body.section3.forEach((value: number, index: number) => {
+        dataToSave[`section3.${index + 1}`] = value;
+      });
+      
+      body.section4.forEach((value: number, index: number) => {
+        dataToSave[`section4.${index + 1}`] = value;
+      });
+    }
+    // If neither format is provided, return an error
+    else if (!hasArraySections && !hasIndividualQuestions) {
       return NextResponse.json(
         { success: false, error: 'Missing questionnaire sections' },
-        { status: 400 }
-      );
-    }
-    
-    if (body.section1.length !== 9 || body.section2.length !== 37 || body.section3.length !== 14 || body.section4.length !== 29) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid questionnaire data structure' },
         { status: 400 }
       );
     }
@@ -64,10 +102,7 @@ export async function POST(request: Request) {
       // Use the saveQuestionnaire function from db.ts
       const result = await saveQuestionnaire(
         body.participantId,
-        body.section1,
-        body.section2,
-        body.section3,
-        body.section4
+        dataToSave
       );
       
       // Check if there was an error

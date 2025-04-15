@@ -110,13 +110,13 @@ export async function GET() {
         message: 'Successfully added department column as nullable'
       });
     }
-  } catch (error: any) {
-    console.error('Database schema fix failed:', error);
-    
+  } catch (error: unknown) {
+    console.error('Database fix error:', error);
     return NextResponse.json({
       success: false,
-      error: `Failed to fix database schema: ${error.message || 'Unknown error'}`,
-      details: error.stack
+      error: 'Database fix failed',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
     }, { status: 500 });
   }
 } 

@@ -45,14 +45,14 @@ export async function GET(request: Request) {
       participant: participant.length > 0 ? participant[0] : null,
       demographicTableStructure: tableInfo
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Test endpoint error:', error);
     return NextResponse.json(
       {
         success: false,
         error: 'Test failed',
-        details: error.message || 'Unknown error',
-        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
