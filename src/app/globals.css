@@ -1,25 +1,18 @@
-@import "tailwindcss/preflight";
-@tailwind utilities;
-
+/* Plain CSS without Tailwind directives */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter, sans-serif);
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-/* Add base styles for form elements */
+/* Form elements styling */
 input[type="text"],
 input[type="number"],
 select {

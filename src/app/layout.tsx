@@ -14,6 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
+      <head>
+        {/* Manually include Tailwind CSS */}
+        <link 
+          rel="stylesheet" 
+          href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" 
+        />
+      </head>
       <body className="w-full h-full flex items-center justify-center my-[100px]">
         <AppProvider>
           {children}
