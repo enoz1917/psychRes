@@ -245,7 +245,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Çılgın partilerden hoşlanırım.",
       "Rotası belli olmayan ve zaman sınırı olmayan bir geziye çıkmak isterim.",
       "Heyecan verici bir şekilde ne yapacağı belli olmayan arkadaşları tercih ederim.",
-      "Lütfen bu soruyu &quot;4=katılıyorum&quot; olarak işaretleyiniz.",
+      "Lütfen bu soruyu '4=katılıyorum' olarak işaretleyiniz.",
       "Bungee-jumping yapmayı denemek isterim.",
       "Yasadışı olsa bile yeni ve heyecan verici deneyimleri yaşamayı severim."
     ];
@@ -358,8 +358,8 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Bölüm 2</h3>
         <p className="text-gray-700 mb-6">
           Aşağıda size verilen her maddeyi okuyunuz ve her madde için olabildiğince
-          dürüst bir şekilde &quot;Sizin karakterinizi ne kadar yansıtıyor veya sizin
-          için ne kadar doğru?&quot; sorusunu cevaplayınız.
+          dürüst bir şekilde 'Sizin karakterinizi ne kadar yansıtıyor veya sizin
+          için ne kadar doğru?' sorusunu cevaplayınız.
         </p>
         
         {questions.map((question, index) => (
@@ -410,7 +410,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Gelecekteki sonuçlara ulaşmak için anlık mutluluğumu ya da esenliğimi feda etmeye istekliyimdir.",
       "Olumsuz sonuç uzun yıllar ortaya çıkmayacak olsa da olumsuz sonuçlarla ilgili uyarıları ciddiye almanın önemli olduğunu düşünürüm.",
       "Daha sonra sonuç alınan önemli bir davranış sergilemenin şimdi sonuç alınan daha az önemli bir davranış sergilemekten daha önemli olduğunu düşünürüm.",
-      "Lütfen bu soruyu &quot;6&quot; olarak işaretleyiniz.",
+      "Lütfen bu soruyu '6' olarak işaretleyiniz.",
       "Gelecekteki sorunlar hakkındaki uyarıları genellikle görmezden gelirim çünkü sorunlar kriz düzeyine ulaşmadan önce çözüleceklerini düşünürüm.",
       "Gelecekteki sonuçlarla daha ilerideki bir zamanda uğraşılabileceği için şimdi fedakârlık yapmanın gereksiz olduğunu düşünürüm.",
       "Gelecekteki sorunlarla daha ilerideki bir vakitte ilgileneceğimi düşünerek sadece anlık kaygılarımı gidermek için eyleme geçerim.",
@@ -423,8 +423,8 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Bölüm 3</h3>
         <p className="text-gray-700 mb-6">
           Aşağıda size sunulan her bir ifadenin sizin için geçerli olup olmadığını lütfen belirtin. 
-          Eğer ifade sizin için son derece geçersizse (size hiç benzemiyorsa) &quot;1&quot; seçeneğini; 
-          eğer ifade sizin için tamamen geçerliyse (size oldukça benziyorsa) &quot;7&quot; seçeneğini işaretleyin.
+          Eğer ifade sizin için son derece geçersizse (size hiç benzemiyorsa) '1' seçeneğini; 
+          eğer ifade sizin için tamamen geçerliyse (size oldukça benziyorsa) '7' seçeneğini işaretleyin.
           Elbette, uç noktaların arasına düşüyorsanız da aradaki sayıları kullanabilirsiniz.
         </p>
         
@@ -499,7 +499,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "İnsanlara yönelik ilk izlenimimde yanılmam.",
       "Çok mecbur olsam bile yalan söylemem.",
       "Hiçbir kötü alışkanlığım yoktur.",
-      "Lütfen bu soruda &quot;1-Hiç uygun değil&quot; seçeneğini işaretleyiniz.",
+      "Lütfen bu soruda '1-Hiç uygun değil' seçeneğini işaretleyiniz.",
       "Yaptığım işlerde her zaman doğru adımlar atarım.",
       "Asla cinsel içerikli kitap veya dergi okumam.",
       "Kesinlikle küfür etmem."
@@ -561,7 +561,6 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="mx-auto max-w-3xl bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Anket</h2>
         
         {/* Debug button - only visible in development */}
         {isDevelopment && (
