@@ -68,7 +68,9 @@ Deneme uygulamasında, size karışık halde verilen kelime gruplarını kullana
 Her kelime grubundan BEŞ KELİME seçerek bir cümle oluşturun.
 
 Kelimeler ekranda sadece belirli bir süre için görünecektir.
-Süre dolduğunda kelimeler ekrandan silinecek ve yeni kelimelere geçilecektir.`}
+Süre dolduğunda kelimeler ekrandan silinecek ve yeni kelimelere geçilecektir.
+KELİME SEÇİMLERİNİZİ MOUSE İLE KELİMELERİN ÜZERİNE TIKLAYARAK YAPABİLİRSİNİZ.
+`}
       onContinue={onContinue}
     />
   );
@@ -83,7 +85,7 @@ export function MainInstructions({ onContinue }: { onContinue: () => void }) {
 Ana uygulamada, kelimeler ekranda sadece belirli bir süre için görünecek.
 Bu süre içinde BEŞ kelime seçerek anlamlı bir cümle oluşturmanız gerekiyor.
 Süre dolduğunda kelimeler ekrandan silinecek ve yeni kelimelere geçilecek.
-
+KELİME SEÇİMLERİNİZİ MOUSE İLE KELİMELERİN ÜZERİNE TIKLAYARAK YAPABİLİRSİNİZ.
 Lütfen olabildiğince hızlı ve doğru bir şekilde seçim yapmaya çalışın.`}
       onContinue={onContinue}
     />

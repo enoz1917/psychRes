@@ -9,7 +9,7 @@ export const practiceGroups: WordGroup[] = [
   { words: ["ASYA", "ZİYARET", "ÜLKELERİNİ", "ETMEK", "İSTİYORUM", "AVRUPA"]},
   { words: ["EĞLENCELİ", "ARKADAŞLARIMLA", "FİLM", "BULURUM", "İZLEYEMEYİ", "DİZİ"]},
   { words: ["KAHVALTIDA", "AİLEMLE", "YUMURTA", "YEMEYİ", "SİMİT", "SEVERİM"]},
-  { words: ["EĞLENCELİDİR", "YABANCI", "ZİYARET", "PAHALIDI", "ETMEK", "ÜLKELERİ"]},
+  { words: ["EĞLENCELİDİR", "YABANCI", "ZİYARET", "PAHALIDIR", "ETMEK", "ÜLKELERİ"]},
   { words: ["ÖĞRENMESİ", "BİR", "ZOR", "KOLAY", "DİLDİR", "ÇİNCE"]},
   { words: ["KÖPEK", "OLMAYI", "İLERİDE", "KEDİ", "SAHİBİ", "İSTİYORUM"]},
   { words: ["ÇALIŞIRKEN", "TERCİH", "KAHVE", "EDERİM", "ÇAY", "İÇMEYİ"]},
