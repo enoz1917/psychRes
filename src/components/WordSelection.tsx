@@ -316,15 +316,17 @@ export default function WordSelection() {
           <h2 className="text-[20px] font-bold text-center text-gray-800 mb-5">
             {isPractice ? 'Deneme Uygulaması' : 'Ana Uygulama'}
           </h2>
-          <div className="flex justify-center">
-            <div className="px-5 py-3 bg-blue-50 rounded-lg text-blue-700 font-medium inline-flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              Kalan Süre: {timeLeft} saniye
+          {process.env.NODE_ENV === 'development' && (
+            <div className="flex justify-center">
+              <div className="px-5 py-3 bg-blue-50 rounded-lg text-blue-700 font-medium inline-flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Kalan Süre: {timeLeft} saniye
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="bg-white p-7 rounded-xl shadow-sm">
