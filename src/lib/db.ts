@@ -265,7 +265,6 @@ export async function initDatabase() {
             "section4.29" INTEGER,
             
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-            UNIQUE(participant_id),
             CONSTRAINT fk_participant
               FOREIGN KEY (participant_id)
               REFERENCES participants(id)
