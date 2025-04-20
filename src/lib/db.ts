@@ -564,11 +564,6 @@ export async function saveQuestionnaire(
 ) {
   await initDatabase();
   try {
-    // Check if questionnaire already exists
-    const existingQuestionnaire = await sql`
-      SELECT * FROM questionnaires WHERE participant_id = ${participantId}
-    `;
-
     // Extract column names and values from the questionData
     const columnNames = Object.keys(questionData)
       .filter(key => key !== 'participantId') // Exclude participantId from columns
@@ -579,54 +574,25 @@ export async function saveQuestionnaire(
       .filter(key => key !== 'participantId') // Exclude participantId from values
       .map(key => questionData[key]);
 
-    // Create the dynamic set clause for UPDATE
-    const setPairs = Object.keys(questionData)
-      .filter(key => key !== 'participantId') // Exclude participantId
-      .map((key, index) => `"${key}" = $${index + 1}`)
-      .join(', ');
-
-    let result;
-    if (existingQuestionnaire && existingQuestionnaire.length > 0) {
-      // Update existing questionnaire with dynamic SQL
-      const updateQuery = `
-        UPDATE questionnaires
-        SET ${setPairs}, created_at = NOW()
-        WHERE participant_id = $${columnValues.length + 1}
-        RETURNING id, participant_id
-      `;
-      
-      const updatedQuestionnaire = await pool.query(
-        updateQuery,
-        [...columnValues, participantId]
-      );
-      
-      console.log('Questionnaire updated successfully');
-      result = updatedQuestionnaire.rows[0] || { id: null, participant_id: participantId };
-    } else {
-      // Create new questionnaire with dynamic SQL
-      const placeholders = columnValues.map((_, index) => `$${index + 1}`).join(', ');
-      
-      const insertQuery = `
-        INSERT INTO questionnaires
-        (participant_id, ${columnNames})
-        VALUES
-        ($${columnValues.length + 1}, ${placeholders})
-        RETURNING id, participant_id
-      `;
-      
-      const newQuestionnaire = await pool.query(
-        insertQuery,
-        [...columnValues, participantId]
-      );
-      
-      console.log('Questionnaire saved successfully');
-      result = newQuestionnaire.rows[0] || { id: null, participant_id: participantId };
-    }
+    // Always create a new questionnaire entry instead of updating existing ones
+    // This ensures we keep a history of all questionnaire submissions
+    const placeholders = columnValues.map((_, index) => `$${index + 1}`).join(', ');
     
-    // Ensure we always return an object with an id property
-    if (!result || typeof result !== 'object') {
-      result = { id: null, participant_id: participantId };
-    }
+    const insertQuery = `
+      INSERT INTO questionnaires
+      (participant_id, ${columnNames})
+      VALUES
+      ($${columnValues.length + 1}, ${placeholders})
+      RETURNING id, participant_id
+    `;
+    
+    const newQuestionnaire = await pool.query(
+      insertQuery,
+      [...columnValues, participantId]
+    );
+    
+    console.log('Questionnaire saved successfully with new record');
+    const result = newQuestionnaire.rows[0] || { id: null, participant_id: participantId };
     
     console.log('Questionnaire operation result:', result);
     return result;
@@ -645,7 +611,10 @@ export async function getQuestionnaireByParticipantId(participantId: number) {
   await initDatabase();
   try {
     const questionnaire = await sql`
-      SELECT * FROM questionnaires WHERE participant_id = ${participantId}
+      SELECT * FROM questionnaires 
+      WHERE participant_id = ${participantId}
+      ORDER BY created_at DESC
+      LIMIT 1
     `;
     
     // Return the first result if it exists
@@ -687,6 +656,57 @@ export async function getQuestionnaireByParticipantId(participantId: number) {
     return null;
   } catch (error) {
     console.error('Error getting questionnaire by participant ID:', error);
+    throw error;
+  }
+}
+
+export async function getAllQuestionnairesByParticipantId(participantId: number) {
+  await initDatabase();
+  try {
+    const questionnaires = await sql`
+      SELECT * FROM questionnaires 
+      WHERE participant_id = ${participantId}
+      ORDER BY created_at DESC
+    `;
+    
+    // Return all questionnaires with section arrays
+    if (questionnaires && questionnaires.length > 0) {
+      return questionnaires.map(result => {
+        // Convert the individual question columns back to section arrays for compatibility
+        const section1 = [];
+        const section2 = [];
+        const section3 = [];
+        const section4 = [];
+        
+        for (let i = 1; i <= 9; i++) {
+          section1.push(result[`section1.${i}`] || 0);
+        }
+        
+        for (let i = 1; i <= 37; i++) {
+          section2.push(result[`section2.${i}`] || 0);
+        }
+        
+        for (let i = 1; i <= 14; i++) {
+          section3.push(result[`section3.${i}`] || 0);
+        }
+        
+        for (let i = 1; i <= 29; i++) {
+          section4.push(result[`section4.${i}`] || 0);
+        }
+        
+        return {
+          ...result,
+          section1,
+          section2,
+          section3,
+          section4
+        };
+      });
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error getting all questionnaires by participant ID:', error);
     throw error;
   }
 } 
