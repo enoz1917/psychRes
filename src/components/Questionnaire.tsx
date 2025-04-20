@@ -245,7 +245,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Çılgın partilerden hoşlanırım.",
       "Rotası belli olmayan ve zaman sınırı olmayan bir geziye çıkmak isterim.",
       "Heyecan verici bir şekilde ne yapacağı belli olmayan arkadaşları tercih ederim.",
-      "Lütfen bu soruyu '4=katılıyorum' olarak işaretleyiniz.",
+      "Lütfen bu soruyu 'Katılıyorum' olarak işaretleyiniz.",
       "Bungee-jumping yapmayı denemek isterim.",
       "Yasadışı olsa bile yeni ve heyecan verici deneyimleri yaşamayı severim."
     ];
@@ -411,7 +411,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Olumsuz sonuç uzun yıllar ortaya çıkmayacak olsa da olumsuz sonuçlarla ilgili uyarıları ciddiye almanın önemli olduğunu düşünürüm.",
       "Daha sonra sonuç alınan önemli bir davranış sergilemenin şimdi sonuç alınan daha az önemli bir davranış sergilemekten daha önemli olduğunu düşünürüm.",
       "Lütfen bu soruyu '6' olarak işaretleyiniz.",
-      "Gelecekteki sorunlar hakkındaki uyarıları genellikle görmezden gelirim çünkü sorunlar kriz düzeyine ulaşmadan önce çözüleceklerini düşünürüm.",
+      "Gelecekteki sorunlar hakkındaki uyarıları genellikle görmezden gelirim çünkü sorunların kriz düzeyine ulaşmadan önce çözüleceklerini düşünürüm.",
       "Gelecekteki sonuçlarla daha ilerideki bir zamanda uğraşılabileceği için şimdi fedakârlık yapmanın gereksiz olduğunu düşünürüm.",
       "Gelecekteki sorunlarla daha ilerideki bir vakitte ilgileneceğimi düşünerek sadece anlık kaygılarımı gidermek için eyleme geçerim.",
       "Günden güne çalışmamın belirli sonuçları olduğundan bu, benim için uzak sonuçları olan davranıştan daha önemlidir.",
@@ -499,7 +499,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "İnsanlara yönelik ilk izlenimimde yanılmam.",
       "Çok mecbur olsam bile yalan söylemem.",
       "Hiçbir kötü alışkanlığım yoktur.",
-      "Lütfen bu soruda '1-Hiç uygun değil' seçeneğini işaretleyiniz.",
+      "Lütfen bu soruda 'Hiç uygun değil' seçeneğini işaretleyiniz.",
       "Yaptığım işlerde her zaman doğru adımlar atarım.",
       "Asla cinsel içerikli kitap veya dergi okumam.",
       "Kesinlikle küfür etmem."

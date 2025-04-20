@@ -110,7 +110,7 @@ export default function ParticipantForm({ onSubmit }: ParticipantFormProps) {
         </h1>
         
         <div className="text-sm space-y-6">
-          <p className="text-lg text-red-500">ÖNEMLİ:  Sayın Katılımcı, çalışmanın sağlıklı ve güvenilir sonuçlar verebilmesi için, uygulamanın sessiz, dikkat dağıtıcı unsurlardan uzak bir ortamda gerçekleştirilmelidir.  Çalışmayı bilgisayar ya da tablet aracılığıyla tamamlamanız gerekmektedir. Cep telefonları ekran boyutu ve teknik sınırlamaları nedeniyle bu çalışma için uygun değildir.
+          <p className="text-lg text-red-500">ÖNEMLİ:  Sayın Katılımcı, çalışmanın sağlıklı ve güvenilir sonuçlar verebilmesi için, uygulama sessiz, dikkat dağıtıcı unsurlardan uzak bir ortamda gerçekleştirilmelidir.  Çalışmayı bilgisayar ya da tablet aracılığıyla tamamlamanız gerekmektedir. Cep telefonları ekran boyutu ve teknik sınırlamaları nedeniyle bu çalışma için uygun değildir.
           Eğer şu anda bilgisayar veya tablet erişiminiz yoksa, lütfen bu cihazlara ulaşabileceğiniz bir zamanı belirleyerek çalışmaya o zaman katılınız.</p>
           <p>
             Değerli Katılımcı, Dokuz Eylül Üniversitesi Psikoloji Anabilim dalı Psikoloji Doktora Programı bünyesinde Necati Enöz tarafından yürütülen araştırmaya davet edilmiş bulunuyorsunuz. Araştırmada üniversite öğrencilerinin zaman yönelimlerini incelemek amacıyla planlanmıştır. Bu araştırmaya katılmak gönüllülük esasına dayanmaktadır. Çalışmaya katılmayı kabul ettikten sonra veri toplama formunu doldurmaya başlamış olsanız bile istemediğiniz takdirde çalışmaya katılmaktan vazgeçebilirsiniz. Formu eksiksiz doldurup araştırmacıya vermiş olmanız/göndermeniz çalışmaya katılma konusunda gönüllü olduğunuz anlamına gelmektedir.
