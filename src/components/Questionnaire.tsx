@@ -130,6 +130,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
     const isComplete = currentSectionData.every(value => value !== 0);
     
     if (!isComplete) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setError('Lütfen tüm soruları cevaplayınız.');
       return;
     }

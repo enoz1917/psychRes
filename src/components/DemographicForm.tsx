@@ -422,10 +422,9 @@ export default function DemographicForm({ onSubmit }: DemographicFormProps) {
                   <label className="block text-gray-900" style={{ fontSize: "1.125rem", fontWeight: "600", marginBottom: "1rem" }}>
                     10. Şu anki yaşamınızda kendinizi aşağıdaki merdivende nereye yerleştirirsiniz?
                   </label>
-                  <p>Aşağıdaki merdivenin Türkiye’deki insanların durduğu yeri temsil ettiğini düşünün. Merdivenin tepesindekiler her şeyin en iyisine (en çok paraya, en iyi eğitime ve en saygın mesleklere) sahip olanlar. Merdivenin en altındakiler ise, en kötü koşullara sahip olanlar (en az paraya, en az eğitime ve en az sayılan mesleklere sahip olanlar ya da hiçbir işi olmayanlar).
-                  </p>
-                  <p>Bu merdivende daha yüksek bir konuma sahip olmanız en tepedeki insanlara daha yakın olduğunuz; daha aşağıda olmanız ise en alttaki insanlara daha yakın olduğunuzu gösterir.</p>
-                  <p>Şu anki yaşamınızda kendinizi yukarıdaki merdivende nereye yerleştirirsiniz?</p>
+                  <p className='mb-2'>Aşağıdaki merdivenin Türkiye’deki insanların durduğu yeri temsil ettiğini düşünün. Merdivenin tepesindekiler her şeyin en iyisine (en çok paraya, en iyi eğitime ve en saygın mesleklere) sahip olanlar. Merdivenin en altındakiler ise, en kötü koşullara sahip olanlar (en az paraya, en az eğitime ve en az sayılan mesleklere sahip olanlar ya da hiçbir işi olmayanlar).</p>
+                  <p className='mb-2'>Bu merdivende daha yüksek bir konuma sahip olmanız en tepedeki insanlara daha yakın olduğunuz; daha aşağıda olmanız ise en alttaki insanlara daha yakın olduğunuzu gösterir.</p>
+                  <p className='mb-2'>Şu anki yaşamınızda kendinizi yukarıdaki merdivende nereye yerleştirirsiniz?</p>
                   <p style={{ fontSize: "0.875rem", color: "#6b7280", marginBottom: "1rem" }}>
                     En üst (10) en iyi koşullara, en alt (1) en kötü koşullara sahip olanları temsil eder.
                   </p>
