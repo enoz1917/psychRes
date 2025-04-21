@@ -25,6 +25,8 @@ export default function Results() {
     saved: number;
     inProgress: boolean;
   }>({ total: 0, saved: 0, inProgress: false });
+  // State to track if localStorage was cleared
+  const [isDataCleared, setIsDataCleared] = useState(false);
 
   // Save results to database
   useEffect(() => {
@@ -148,6 +150,21 @@ export default function Results() {
           setSaveError(`Not all results were saved. ${totalSaved} of ${sortedResults.length} saved.`);
         } else {
           console.log(`All ${totalSaved} results saved successfully!`);
+          
+          // Clear localStorage after successful save to prevent duplicate submissions
+          console.log('Clearing localStorage to prevent duplicate submissions in future sessions');
+          localStorage.removeItem('results');
+          localStorage.removeItem('demographic');
+          localStorage.removeItem('participantData');
+          localStorage.removeItem('questionnaireData');
+          localStorage.removeItem('lastGroupIndex');
+          localStorage.removeItem('isPractice');
+          localStorage.removeItem('isCompleted');
+          localStorage.removeItem('databaseParticipantId');
+          
+          // Log confirmation
+          console.log('localStorage cleared successfully');
+          setIsDataCleared(true);
         }
       } catch (error) {
         console.error('Error in saveResults function:', error);
@@ -323,9 +340,18 @@ export default function Results() {
             Veriler yükleniyor...
           </p>
         ) : (
-          <p className="text-lg text-gray-700 text-center">
-            Katılımınız için teşekkür ederiz.
-          </p>
+          <>
+            <p className="text-lg text-gray-700 text-center">
+              Katılımınız için teşekkür ederiz.
+            </p>
+            {isDataCleared && (
+              <div className="p-4 bg-green-50 text-green-800 rounded-lg mt-4">
+                <p className="font-medium">Veri Depolama Temizlendi</p>
+                <p className="text-sm">Tüm veriler başarıyla kaydedildi ve yerel depolama temizlendi.</p>
+                <p className="text-sm italic mt-2">Bu uygulama yeniden açıldığında yeni bir oturum başlatılacaktır.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
