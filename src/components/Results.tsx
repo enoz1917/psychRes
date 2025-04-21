@@ -20,33 +20,27 @@ export default function Results() {
   const [debugMode, setDebugMode] = useState(false);
   const [noResultsError, setNoResultsError] = useState<boolean>(false);
 
-  // Save results to database when component mounts
+  // Save results to database
   useEffect(() => {
+    // Skip if no results or we're in testing mode
+    if (!contextResults || contextResults.length === 0) {
+      return;
+    }
+
+    // Helper function to save results
     const saveResults = async () => {
       try {
-        // First try to use results from context
-        if (contextResults && contextResults.length > 0) {
-          // Continue with database save using context results
-          const resultsWithParticipantId = contextResults.map(result => ({
-            ...result,
-            participantId: result.participantId || databaseParticipantId
-          }));
-          
-          // Save results to database
-          await saveResultsToDatabase(resultsWithParticipantId);
-          return;
-        }
+        // Parse the results
+        let parsedResults: Result[] = [];
         
-        // If no context results, try localStorage
-        const storedResults = localStorage.getItem('results');
-        if (!storedResults) {
-          console.error('No results found in localStorage');
+        try {
+          parsedResults = contextResults;
+        } catch (parseError) {
+          console.error('Error parsing results from context:', parseError);
           setNoResultsError(true);
           return;
         }
-
-        const parsedResults = JSON.parse(storedResults) as Result[];
-
+        
         // Validate results
         if (!parsedResults.length) {
           console.error('No results found');
@@ -60,48 +54,105 @@ export default function Results() {
           participantId: result.participantId || databaseParticipantId
         }));
 
-        // Save results to database
-        await saveResultsToDatabase(resultsWithParticipantId);
+        // Save results to database with retry logic
+        try {
+          await saveResultsWithRetry(resultsWithParticipantId);
+          console.log('Results saved successfully with retry mechanism');
+        } catch (error) {
+          console.error('Final error saving results:', error);
+          setSaveError(error instanceof Error ? error.message : 'Failed to save results. Please try again.');
+        }
       } catch (error) {
-        console.error('Error saving results:', error);
+        console.error('Error in saveResults function:', error);
         setSaveError(error instanceof Error ? error.message : 'Failed to save results. Please try again.');
       }
     };
 
     // Helper function to save results to database
     const saveResultsToDatabase = async (resultsToSave: Result[]) => {
-      const response = await fetch('/api/save-results', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ results: resultsToSave }),
-      });
+      try {
+        console.log(`Attempting to save ${resultsToSave.length} results to database...`);
+        
+        const response = await fetch('/api/save-results', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ results: resultsToSave }),
+          // Add a longer timeout
+          signal: AbortSignal.timeout(30000), // 30 seconds timeout
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save results');
-      }
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          let errorMessage: string;
+          
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.error || `Server error: ${response.status} ${response.statusText}`;
+          } else {
+            const text = await response.text();
+            errorMessage = `Server error: ${response.status} ${response.statusText} - ${text.substring(0, 100)}...`;
+          }
+          
+          console.error('Error saving results:', errorMessage);
+          throw new Error(errorMessage);
+        }
 
-      const data = await response.json();
-      console.log('Results saved successfully:', data);
-      
-      // Set debug results if in debug mode
-      if (debugMode) {
-        setDebugResults(data);
-      }
-      
-      // Check if there were any errors
-      if (data.errorCount && data.errorCount > 0) {
-        console.warn(`Some results could not be saved: ${data.errorCount} errors`);
-        setSaveError(`Some results could not be saved. ${data.savedCount} results saved successfully, ${data.errorCount} errors.`);
-      } else {
-        console.log(`All results saved successfully: ${data.savedCount} results`);
+        const data = await response.json();
+        console.log('Results saved successfully:', data);
+        
+        // Set debug results if in debug mode
+        if (debugMode) {
+          setDebugResults(data);
+        }
+        
+        // Check if there were any errors
+        if (data.errorCount && data.errorCount > 0) {
+          console.warn(`Some results could not be saved: ${data.errorCount} errors`);
+          setSaveError(`Some results could not be saved. ${data.savedCount} results saved successfully, ${data.errorCount} errors.`);
+        } else {
+          console.log(`All results saved successfully: ${data.savedCount} results`);
+        }
+        
+        return data;
+      } catch (error) {
+        console.error('Error in saveResultsToDatabase:', error);
+        // Throw the error to be handled by the caller
+        throw error;
       }
     };
 
-    // Add a small delay to ensure results are populated
-    const timeoutId = setTimeout(saveResults, 1000);
+    // Function to save results with retries
+    const saveResultsWithRetry = async (resultsToSave: Result[], retries = 3, delay = 1000) => {
+      try {
+        return await saveResultsToDatabase(resultsToSave);
+      } catch (error) {
+        if (retries > 0) {
+          console.log(`Retrying save... (${retries} attempts left)`);
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          // Retry with exponential backoff
+          return saveResultsWithRetry(resultsToSave, retries - 1, delay * 2);
+        } else {
+          console.error('All retry attempts failed');
+          setSaveError(error instanceof Error ? error.message : 'Failed to save results after multiple attempts.');
+          throw error;
+        }
+      }
+    };
+
+    // Add a small delay to ensure results are populated, then save with retry
+    const timeoutId = setTimeout(async () => {
+      try {
+        await saveResults();
+      } catch (error) {
+        console.error('Failed to save results after retries:', error);
+      }
+    }, 1000);
+    
     return () => clearTimeout(timeoutId);
   }, [databaseParticipantId, debugMode, contextResults]);
 
