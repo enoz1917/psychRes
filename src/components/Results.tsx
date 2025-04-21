@@ -60,19 +60,31 @@ export default function Results() {
           participantId: result.participantId || databaseParticipantId
         }));
 
+        // Sort results by taskType (Practice first, then Main) and then by groupIndex
+        const sortedResults = [...resultsWithParticipantId].sort((a, b) => {
+          // First sort by taskType (Practice comes before Main)
+          if (a.taskType !== b.taskType) {
+            return a.taskType === 'Practice' ? -1 : 1;
+          }
+          // Then sort by groupIndex
+          return a.groupIndex - b.groupIndex;
+        });
+        
+        console.log('Results sorted by taskType and groupIndex for ordered processing');
+
         // Split results into smaller batches for independent processing
         const BATCH_SIZE = 5; // Send 5 results at a time
         const batches: Result[][] = [];
         
-        for (let i = 0; i < resultsWithParticipantId.length; i += BATCH_SIZE) {
-          batches.push(resultsWithParticipantId.slice(i, i + BATCH_SIZE));
+        for (let i = 0; i < sortedResults.length; i += BATCH_SIZE) {
+          batches.push(sortedResults.slice(i, i + BATCH_SIZE));
         }
         
-        console.log(`Splitting ${resultsWithParticipantId.length} results into ${batches.length} client-side batches`);
+        console.log(`Splitting ${sortedResults.length} results into ${batches.length} client-side batches`);
         
         // Initialize progress tracking
         setSaveProgress({
-          total: resultsWithParticipantId.length,
+          total: sortedResults.length,
           saved: 0,
           inProgress: true
         });
@@ -84,6 +96,7 @@ export default function Results() {
         for (let i = 0; i < batches.length; i++) {
           const batch = batches[i];
           console.log(`Processing client-side batch ${i + 1}/${batches.length} with ${batch.length} results`);
+          console.log(`Batch ${i + 1} contains group indices:`, batch.map(item => `${item.taskType}:${item.groupIndex}`).join(', '));
           
           try {
             // Process this batch with retry
@@ -130,9 +143,9 @@ export default function Results() {
         
         // Show error if any batches failed
         if (errors.length > 0) {
-          setSaveError(`Some results could not be saved. ${totalSaved} of ${resultsWithParticipantId.length} results saved. Errors: ${errors.length}`);
-        } else if (totalSaved < resultsWithParticipantId.length) {
-          setSaveError(`Not all results were saved. ${totalSaved} of ${resultsWithParticipantId.length} saved.`);
+          setSaveError(`Some results could not be saved. ${totalSaved} of ${sortedResults.length} results saved. Errors: ${errors.length}`);
+        } else if (totalSaved < sortedResults.length) {
+          setSaveError(`Not all results were saved. ${totalSaved} of ${sortedResults.length} saved.`);
         } else {
           console.log(`All ${totalSaved} results saved successfully!`);
         }
