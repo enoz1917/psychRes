@@ -156,10 +156,10 @@ export async function initDatabase() {
       console.log('Creating questionnaires table...');
       try {
         // First drop the old table if it exists
-        await sql`
-          DROP TABLE IF EXISTS questionnaires CASCADE
-        `;
-        console.log('Dropped old questionnaires table if it existed');
+        // await sql`
+        //   DROP TABLE IF EXISTS questionnaires CASCADE
+        // `;
+        // console.log('Dropped old questionnaires table if it existed');
         
         // Create new questionnaires table with individual columns
         await sql`
