@@ -174,7 +174,6 @@ export async function GET(request: Request) {
     // Get participant ID from URL
     const url = new URL(request.url);
     const participantId = url.searchParams.get('participantId');
-    const getAllEntries = url.searchParams.get('all') === 'true';
     
     if (!participantId) {
       return NextResponse.json(
@@ -184,42 +183,22 @@ export async function GET(request: Request) {
     }
     
     try {
-      // Get either all questionnaires or just the most recent one
-      if (getAllEntries) {
-        // Use the getAllQuestionnairesByParticipantId function
-        const result = await import('@/lib/db').then(db => 
-          db.getAllQuestionnairesByParticipantId(parseInt(participantId, 10))
+      // Use the getQuestionnaireByParticipantId function to retrieve the questionnaire
+      const result = await import('@/lib/db').then(db => 
+        db.getQuestionnaireByParticipantId(parseInt(participantId, 10))
+      );
+      
+      if (!result) {
+        return NextResponse.json(
+          { success: false, error: `No questionnaire found for participant ${participantId}` },
+          { status: 404 }
         );
-        
-        if (!result || result.length === 0) {
-          return NextResponse.json(
-            { success: false, error: `No questionnaires found for participant ${participantId}` },
-            { status: 404 }
-          );
-        }
-        
-        return NextResponse.json({
-          success: true,
-          questionnaires: result
-        });
-      } else {
-        // Use the getQuestionnaireByParticipantId function for the most recent one
-        const result = await import('@/lib/db').then(db => 
-          db.getQuestionnaireByParticipantId(parseInt(participantId, 10))
-        );
-        
-        if (!result) {
-          return NextResponse.json(
-            { success: false, error: `No questionnaire found for participant ${participantId}` },
-            { status: 404 }
-          );
-        }
-        
-        return NextResponse.json({
-          success: true,
-          questionnaire: result
-        });
       }
+      
+      return NextResponse.json({
+        success: true,
+        questionnaire: result
+      });
     } catch (dbError) {
       console.error('Database error:', dbError);
       return NextResponse.json(

@@ -265,6 +265,7 @@ export async function initDatabase() {
             "section4.29" INTEGER,
             
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            UNIQUE(participant_id),
             CONSTRAINT fk_participant
               FOREIGN KEY (participant_id)
               REFERENCES participants(id)
@@ -272,44 +273,6 @@ export async function initDatabase() {
           )
         `;
         console.log('Questionnaires table created successfully with individual columns');
-        
-        // Check for and remove any unique constraints on the questionnaires table
-        try {
-          await sql`
-            DO $$ 
-            BEGIN 
-              -- Check for a constraint named 'unique_participant_id'
-              IF EXISTS (
-                SELECT 1 
-                FROM pg_constraint 
-                WHERE conname = 'unique_participant_id'
-              ) THEN
-                ALTER TABLE questionnaires 
-                DROP CONSTRAINT unique_participant_id;
-                RAISE NOTICE 'Removed unique_participant_id constraint from questionnaires table';
-              END IF;
-              
-              -- Check for any other unique constraints on participant_id column
-              FOR con IN 
-                SELECT conname FROM pg_constraint 
-                WHERE conrelid = 'questionnaires'::regclass 
-                AND contype = 'u' 
-                AND array_position(conkey, (
-                  SELECT attnum FROM pg_attribute 
-                  WHERE attrelid = 'questionnaires'::regclass 
-                  AND attname = 'participant_id'
-                )) IS NOT NULL
-              LOOP
-                EXECUTE format('ALTER TABLE questionnaires DROP CONSTRAINT %I', con.conname);
-                RAISE NOTICE 'Removed %', con.conname;
-              END LOOP;
-            END $$;
-          `;
-          console.log('Checked and removed any unique constraints on questionnaires.participant_id');
-        } catch (constraintError) {
-          console.error('Error while checking for unique constraints on questionnaires table:', constraintError);
-          // Continue anyway as the constraints might not exist
-        }
       } catch (questionnairesError) {
         console.error('Error creating questionnaires table:', questionnairesError);
         throw questionnairesError;
@@ -600,39 +563,76 @@ export async function saveQuestionnaire(
   questionData: Record<string, number>
 ) {
   await initDatabase();
-  console.log('Saving new questionnaire for participant:', participantId);
+  console.log('Saving questionnaire for participant:', participantId);
   
   try {
-    // Create a dynamic SQL insertion for all the question fields
-    // First prepare the column names and values arrays
-    const columns = ['participant_id'];
-    const values = [participantId];
+    // Prepare columns and values for SQL query
+    const setValues: any[] = [];
+    const columnAssignments: string[] = [];
     
-    // Add all the question data
+    // Process all question data
     Object.entries(questionData).forEach(([key, value]) => {
-      if (key !== 'participantId') { // Skip the participantId field
-        columns.push(`"${key}"`); // Use quotes for the column names since they contain periods
-        values.push(value);
+      if (key !== 'participantId') { // Skip participantId field
+        const columnName = `"${key}"`; // Wrap column name in quotes for SQL safety
+        setValues.push(value);
+        columnAssignments.push(`${columnName} = $${setValues.length}`);
       }
     });
     
-    // Log what we're about to insert
-    console.log(`Inserting new questionnaire with ${columns.length} columns`);
+    // Log what we're about to save
+    console.log(`Saving questionnaire with ${setValues.length} values for participant ${participantId}`);
     
-    // Create a placeholders array for the SQL template
-    const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-    
-    // Now build and execute the SQL insertion using pool.query
-    const insertQuery = `
-      INSERT INTO questionnaires (${columns.join(', ')})
-      VALUES (${placeholders})
-      RETURNING id, participant_id, created_at
+    // Check if a record already exists for this participant
+    const existingRecord = await sql`
+      SELECT id FROM questionnaires WHERE participant_id = ${participantId}
     `;
     
-    // Execute the query using pool.query
-    const result = await pool.query(insertQuery, values);
+    let result;
     
-    console.log('New questionnaire saved successfully, ID:', result.rows[0]?.id);
+    if (existingRecord && existingRecord.length > 0) {
+      // Update existing record
+      console.log(`Updating existing questionnaire for participant ${participantId}`);
+      
+      // Build the update query
+      const updateQuery = `
+        UPDATE questionnaires
+        SET ${columnAssignments.join(', ')}, created_at = NOW()
+        WHERE participant_id = $${setValues.length + 1}
+        RETURNING id, participant_id, created_at
+      `;
+      
+      // Execute the query
+      result = await pool.query(updateQuery, [...setValues, participantId]);
+      console.log(`Questionnaire updated successfully, ID: ${result.rows[0]?.id}`);
+    } else {
+      // Insert new record
+      console.log(`Creating new questionnaire record for participant ${participantId}`);
+      
+      // Build column names and placeholders for INSERT
+      const columnNames: string[] = ['participant_id'];
+      const placeholders: string[] = ['$1'];
+      const insertValues: any[] = [participantId];
+      
+      // Add all question data
+      Object.entries(questionData).forEach(([key, value], index) => {
+        if (key !== 'participantId') {
+          columnNames.push(`"${key}"`);
+          placeholders.push(`$${insertValues.length + 1}`);
+          insertValues.push(value);
+        }
+      });
+      
+      // Build the insert query
+      const insertQuery = `
+        INSERT INTO questionnaires (${columnNames.join(', ')})
+        VALUES (${placeholders.join(', ')})
+        RETURNING id, participant_id, created_at
+      `;
+      
+      // Execute the query
+      result = await pool.query(insertQuery, insertValues);
+      console.log(`New questionnaire created successfully, ID: ${result.rows[0]?.id}`);
+    }
     
     if (!result.rows[0] || !result.rows[0].id) {
       throw new Error('Failed to get ID after saving questionnaire');
@@ -660,11 +660,9 @@ export async function getQuestionnaireByParticipantId(participantId: number) {
     const questionnaire = await sql`
       SELECT * FROM questionnaires 
       WHERE participant_id = ${participantId}
-      ORDER BY created_at DESC
-      LIMIT 1
     `;
     
-    // Return the first result if it exists
+    // Return the result if it exists
     if (questionnaire && questionnaire.length > 0) {
       const result = questionnaire[0];
       
@@ -703,57 +701,6 @@ export async function getQuestionnaireByParticipantId(participantId: number) {
     return null;
   } catch (error) {
     console.error('Error getting questionnaire by participant ID:', error);
-    throw error;
-  }
-}
-
-export async function getAllQuestionnairesByParticipantId(participantId: number) {
-  await initDatabase();
-  try {
-    const questionnaires = await sql`
-      SELECT * FROM questionnaires 
-      WHERE participant_id = ${participantId}
-      ORDER BY created_at DESC
-    `;
-    
-    // Return all questionnaires with section arrays
-    if (questionnaires && questionnaires.length > 0) {
-      return questionnaires.map(result => {
-        // Convert the individual question columns back to section arrays for compatibility
-        const section1 = [];
-        const section2 = [];
-        const section3 = [];
-        const section4 = [];
-        
-        for (let i = 1; i <= 9; i++) {
-          section1.push(result[`section1.${i}`] || 0);
-        }
-        
-        for (let i = 1; i <= 37; i++) {
-          section2.push(result[`section2.${i}`] || 0);
-        }
-        
-        for (let i = 1; i <= 14; i++) {
-          section3.push(result[`section3.${i}`] || 0);
-        }
-        
-        for (let i = 1; i <= 29; i++) {
-          section4.push(result[`section4.${i}`] || 0);
-        }
-        
-        return {
-          ...result,
-          section1,
-          section2,
-          section3,
-          section4
-        };
-      });
-    }
-    
-    return [];
-  } catch (error) {
-    console.error('Error getting all questionnaires by participant ID:', error);
     throw error;
   }
 } 
