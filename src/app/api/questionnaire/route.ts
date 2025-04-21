@@ -6,17 +6,22 @@ let databaseInitialized = false;
 
 export async function POST(request: Request) {
   try {
+    console.log('Questionnaire API POST called');
+    
     // Initialize the database if not already done
     if (!databaseInitialized) {
+      console.log('Initializing database for questionnaire API...');
       try {
         const initSuccess = await initDatabase();
         if (!initSuccess) {
+          console.error('Database initialization failed with falsy return value');
           throw new Error('Failed to initialize database');
         }
         databaseInitialized = true;
         console.log('Database initialized successfully for questionnaire API');
       } catch (initError) {
         console.error('Failed to initialize database:', initError);
+        console.error('Error details:', initError instanceof Error ? initError.stack : 'No stack trace');
         return NextResponse.json(
           { success: false, error: 'Database initialization failed. Please check your connection.' },
           { status: 500 }
@@ -39,6 +44,7 @@ export async function POST(request: Request) {
     
     // Validate participant ID
     if (!body.participantId) {
+      console.error('Missing participantId in request body');
       return NextResponse.json(
         { success: false, error: 'Missing participantId' },
         { status: 400 }
@@ -55,6 +61,15 @@ export async function POST(request: Request) {
       Array.isArray(body.section3) && 
       Array.isArray(body.section4);
     
+    console.log('Request format check:', { 
+      hasIndividualQuestions, 
+      hasArraySections,
+      section1Length: hasArraySections ? body.section1.length : 'N/A',
+      section2Length: hasArraySections ? body.section2.length : 'N/A',
+      section3Length: hasArraySections ? body.section3.length : 'N/A',
+      section4Length: hasArraySections ? body.section4.length : 'N/A',
+    });
+    
     // Prepare data for saving
     let dataToSave = body;
     
@@ -65,6 +80,12 @@ export async function POST(request: Request) {
       // Validate section array lengths
       if (body.section1.length !== 9 || body.section2.length !== 38 || 
           body.section3.length !== 15 || body.section4.length !== 30) {
+        console.error('Invalid questionnaire section lengths:', {
+          section1: body.section1.length,
+          section2: body.section2.length,
+          section3: body.section3.length, 
+          section4: body.section4.length
+        });
         return NextResponse.json(
           { success: false, error: 'Invalid questionnaire data structure' },
           { status: 400 }
@@ -89,9 +110,12 @@ export async function POST(request: Request) {
       body.section4.forEach((value: number, index: number) => {
         dataToSave[`section4.${index + 1}`] = value;
       });
+      
+      console.log(`Converted to individual question format with ${Object.keys(dataToSave).length - 1} question fields`);
     }
     // If neither format is provided, return an error
     else if (!hasArraySections && !hasIndividualQuestions) {
+      console.error('Missing questionnaire sections in request body');
       return NextResponse.json(
         { success: false, error: 'Missing questionnaire sections' },
         { status: 400 }
@@ -99,6 +123,8 @@ export async function POST(request: Request) {
     }
     
     try {
+      console.log(`Saving questionnaire for participant ${body.participantId}...`);
+      
       // Use the saveQuestionnaire function from db.ts
       const result = await saveQuestionnaire(
         body.participantId,
@@ -127,7 +153,8 @@ export async function POST(request: Request) {
         message: 'Questionnaire saved successfully'
       });
     } catch (dbError) {
-      console.error('Database error:', dbError);
+      console.error('Database error when saving questionnaire:', dbError);
+      console.error('Error details:', dbError instanceof Error ? dbError.stack : 'No stack trace');
       return NextResponse.json(
         { 
           success: false, 
@@ -139,6 +166,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error('Unhandled error in questionnaire API:', error);
+    console.error('Error details:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
       { 
         success: false, 
