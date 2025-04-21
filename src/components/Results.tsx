@@ -19,6 +19,12 @@ export default function Results() {
   const [debugResults, setDebugResults] = useState<Record<string, unknown> | null>(null);
   const [debugMode, setDebugMode] = useState(false);
   const [noResultsError, setNoResultsError] = useState<boolean>(false);
+  // New state for tracking save progress
+  const [saveProgress, setSaveProgress] = useState<{
+    total: number;
+    saved: number;
+    inProgress: boolean;
+  }>({ total: 0, saved: 0, inProgress: false });
 
   // Save results to database
   useEffect(() => {
@@ -54,17 +60,86 @@ export default function Results() {
           participantId: result.participantId || databaseParticipantId
         }));
 
-        // Save results to database with retry logic
-        try {
-          await saveResultsWithRetry(resultsWithParticipantId);
-          console.log('Results saved successfully with retry mechanism');
-        } catch (error) {
-          console.error('Final error saving results:', error);
-          setSaveError(error instanceof Error ? error.message : 'Failed to save results. Please try again.');
+        // Split results into smaller batches for independent processing
+        const BATCH_SIZE = 5; // Send 5 results at a time
+        const batches: Result[][] = [];
+        
+        for (let i = 0; i < resultsWithParticipantId.length; i += BATCH_SIZE) {
+          batches.push(resultsWithParticipantId.slice(i, i + BATCH_SIZE));
+        }
+        
+        console.log(`Splitting ${resultsWithParticipantId.length} results into ${batches.length} client-side batches`);
+        
+        // Initialize progress tracking
+        setSaveProgress({
+          total: resultsWithParticipantId.length,
+          saved: 0,
+          inProgress: true
+        });
+        
+        // Process batches sequentially with individual error handling
+        let totalSaved = 0;
+        let errors: string[] = [];
+        
+        for (let i = 0; i < batches.length; i++) {
+          const batch = batches[i];
+          console.log(`Processing client-side batch ${i + 1}/${batches.length} with ${batch.length} results`);
+          
+          try {
+            // Process this batch with retry
+            const batchResult = await saveResultsWithRetry(batch);
+            
+            // Update saved count
+            if (batchResult.success) {
+              totalSaved += batchResult.savedCount || 0;
+              setSaveProgress(prev => ({
+                ...prev,
+                saved: totalSaved
+              }));
+            }
+            
+            // Collect any errors
+            if (batchResult.errors && batchResult.errors.length > 0) {
+              errors = [...errors, ...batchResult.errors];
+            }
+            
+            // Update debug info if in debug mode
+            if (debugMode) {
+              setDebugResults(prev => ({
+                ...prev,
+                [`batch${i + 1}`]: batchResult
+              }));
+            }
+          } catch (error) {
+            console.error(`Error processing batch ${i + 1}:`, error);
+            errors.push(`Batch ${i + 1} failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          
+          // Add a small delay between batches to avoid overwhelming the server
+          if (i < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+        
+        // Update final progress
+        setSaveProgress(prev => ({
+          ...prev,
+          saved: totalSaved,
+          inProgress: false
+        }));
+        
+        // Show error if any batches failed
+        if (errors.length > 0) {
+          setSaveError(`Some results could not be saved. ${totalSaved} of ${resultsWithParticipantId.length} results saved. Errors: ${errors.length}`);
+        } else if (totalSaved < resultsWithParticipantId.length) {
+          setSaveError(`Not all results were saved. ${totalSaved} of ${resultsWithParticipantId.length} saved.`);
+        } else {
+          console.log(`All ${totalSaved} results saved successfully!`);
         }
       } catch (error) {
         console.error('Error in saveResults function:', error);
         setSaveError(error instanceof Error ? error.message : 'Failed to save results. Please try again.');
+        setSaveProgress(prev => ({ ...prev, inProgress: false }));
       }
     };
 
@@ -102,19 +177,6 @@ export default function Results() {
         const data = await response.json();
         console.log('Results saved successfully:', data);
         
-        // Set debug results if in debug mode
-        if (debugMode) {
-          setDebugResults(data);
-        }
-        
-        // Check if there were any errors
-        if (data.errorCount && data.errorCount > 0) {
-          console.warn(`Some results could not be saved: ${data.errorCount} errors`);
-          setSaveError(`Some results could not be saved. ${data.savedCount} results saved successfully, ${data.errorCount} errors.`);
-        } else {
-          console.log(`All results saved successfully: ${data.savedCount} results`);
-        }
-        
         return data;
       } catch (error) {
         console.error('Error in saveResultsToDatabase:', error);
@@ -138,7 +200,6 @@ export default function Results() {
           return saveResultsWithRetry(resultsToSave, retries - 1, delay * 2);
         } else {
           console.error('All retry attempts failed');
-          setSaveError(error instanceof Error ? error.message : 'Failed to save results after multiple attempts.');
           throw error;
         }
       }
@@ -198,6 +259,22 @@ export default function Results() {
             >
               Yeniden Başlat
             </button>
+          </div>
+        )}
+        
+        {/* Save Progress Indicator */}
+        {saveProgress.inProgress && (
+          <div className="p-4 bg-blue-50 text-blue-800 rounded-lg mb-6">
+            <p className="font-medium">Sonuçlar Kaydediliyor</p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${(saveProgress.saved / saveProgress.total) * 100}%` }}
+              ></div>
+            </div>
+            <p className="text-sm mt-1">
+              {saveProgress.saved} / {saveProgress.total} sonuç kaydedildi
+            </p>
           </div>
         )}
         
