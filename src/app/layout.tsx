@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./mobileBlocker.css";
 import { AppProvider } from "@/contexts/AppContext";
 
 export const metadata: Metadata = {
@@ -14,39 +15,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <head>
-        <style jsx global>{`
-          /* Mobile device blocking styles */
-          .mobile-block-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.98);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            text-align: center;
-            overflow: auto;
-          }
-          
-          /* Display the overlay on screens smaller than 768px (typical mobile phones) */
-          @media (max-width: 767px) {
-            .mobile-block-overlay {
-              display: flex;
-            }
-            
-            /* Hide the app content when the overlay is visible */
-            .app-content {
-              display: none;
-            }
-          }
-        `}</style>
-      </head>
       <body className="w-full h-full flex items-center justify-center my-[100px]">
         {/* Mobile blocking overlay */}
         <div className="mobile-block-overlay">
