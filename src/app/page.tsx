@@ -100,10 +100,15 @@ function App() {
   // Check if questionnaire is already completed
   useEffect(() => {
     if (questionnaireData && isCompleted) {
-      const section1Complete = questionnaireData.section1.every(val => val !== 0);
-      const section2Complete = questionnaireData.section2.every(val => val !== 0);
-      const section3Complete = questionnaireData.section3.every(val => val !== 0);
-      const section4Complete = questionnaireData.section4.every(val => val !== 0);
+      // Make sure we count all questions including the new ones
+      const section1Complete = questionnaireData.section1.every(val => val !== 0) && 
+                              questionnaireData.section1.length === 9;
+      const section2Complete = questionnaireData.section2.every(val => val !== 0) && 
+                              questionnaireData.section2.length === 38;
+      const section3Complete = questionnaireData.section3.every(val => val !== 0) && 
+                              questionnaireData.section3.length === 15;
+      const section4Complete = questionnaireData.section4.every(val => val !== 0) && 
+                              questionnaireData.section4.length === 30;
       
       if (section1Complete && section2Complete && section3Complete && section4Complete) {
         setQuestionnaireCompleted(true);

@@ -63,8 +63,8 @@ export async function POST(request: Request) {
       console.log('Converting from array sections to individual question format');
       
       // Validate section array lengths
-      if (body.section1.length !== 9 || body.section2.length !== 37 || 
-          body.section3.length !== 14 || body.section4.length !== 29) {
+      if (body.section1.length !== 9 || body.section2.length !== 38 || 
+          body.section3.length !== 15 || body.section4.length !== 30) {
         return NextResponse.json(
           { success: false, error: 'Invalid questionnaire data structure' },
           { status: 400 }

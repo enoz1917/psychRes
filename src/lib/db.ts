@@ -178,7 +178,7 @@ export async function initDatabase() {
             "section1.8" INTEGER,
             "section1.9" INTEGER,
             
-            -- Section 2 columns (37 questions)
+            -- Section 2 columns (38 questions)
             "section2.1" INTEGER,
             "section2.2" INTEGER,
             "section2.3" INTEGER,
@@ -216,8 +216,9 @@ export async function initDatabase() {
             "section2.35" INTEGER,
             "section2.36" INTEGER,
             "section2.37" INTEGER,
+            "section2.38" INTEGER,
             
-            -- Section 3 columns (14 questions)
+            -- Section 3 columns (15 questions)
             "section3.1" INTEGER,
             "section3.2" INTEGER,
             "section3.3" INTEGER,
@@ -232,8 +233,9 @@ export async function initDatabase() {
             "section3.12" INTEGER,
             "section3.13" INTEGER,
             "section3.14" INTEGER,
+            "section3.15" INTEGER,
             
-            -- Section 4 columns (29 questions)
+            -- Section 4 columns (30 questions)
             "section4.1" INTEGER,
             "section4.2" INTEGER,
             "section4.3" INTEGER,
@@ -263,6 +265,7 @@ export async function initDatabase() {
             "section4.27" INTEGER,
             "section4.28" INTEGER,
             "section4.29" INTEGER,
+            "section4.30" INTEGER,
             
             created_at TIMESTAMP NOT NULL DEFAULT NOW(),
             UNIQUE(participant_id),
@@ -676,15 +679,15 @@ export async function getQuestionnaireByParticipantId(participantId: number) {
         section1.push(result[`section1.${i}`] || 0);
       }
       
-      for (let i = 1; i <= 37; i++) {
+      for (let i = 1; i <= 38; i++) {
         section2.push(result[`section2.${i}`] || 0);
       }
       
-      for (let i = 1; i <= 14; i++) {
+      for (let i = 1; i <= 15; i++) {
         section3.push(result[`section3.${i}`] || 0);
       }
       
-      for (let i = 1; i <= 29; i++) {
+      for (let i = 1; i <= 30; i++) {
         section4.push(result[`section4.${i}`] || 0);
       }
       

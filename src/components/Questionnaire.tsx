@@ -53,9 +53,9 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       
   const [data, setData] = useState<QuestionnaireData>({
     section1: validContextData ? contextData.section1 : Array(9).fill(0),
-    section2: validContextData ? contextData.section2 : Array(37).fill(0),
-    section3: validContextData ? contextData.section3 : Array(14).fill(0),
-    section4: validContextData ? contextData.section4 : Array(29).fill(0),
+    section2: validContextData ? contextData.section2 : Array(38).fill(0),
+    section3: validContextData ? contextData.section3 : Array(15).fill(0),
+    section4: validContextData ? contextData.section4 : Array(30).fill(0),
   });
   
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -87,9 +87,9 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
   useEffect(() => {
     const sectionProgress = {
       1: 0,
-      2: 9 / 89,
-      3: 46 / 89,
-      4: 60 / 89,
+      2: 9 / 92,
+      3: 47 / 92,
+      4: 62 / 92,
     };
     setProgress(sectionProgress[currentSection as 1 | 2 | 3 | 4] * 100);
   }, [currentSection]);
@@ -230,9 +230,9 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
   const fillWithOnes = () => {
     setData({
       section1: Array(9).fill(1),
-      section2: Array(37).fill(1),
-      section3: Array(14).fill(1),
-      section4: Array(29).fill(1),
+      section2: Array(38).fill(1),
+      section3: Array(15).fill(1),
+      section4: Array(30).fill(1),
     });
     setError(null);
   };
@@ -343,7 +343,8 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Eğer benim ilerlememi sağlayacaksa, zor ve ilginç olmayan görevlerde çalışmaya devam ederim.",
       "Kazandıklarımı bugün keyif için harcamak, yarının güvencesi için biriktirmekten daha iyidir.",
       "Genellikle şans, sıkı çalışmaktan daha iyi sonuç getirir.",
-      "Yakın ilişkilerimin tutkulu olmasını severim."
+      "Yakın ilişkilerimin tutkulu olmasını severim.",
+      "İşlerimi yetiştirmek için her zaman vakit olacaktır."
     ];
 
     const options = [
@@ -416,7 +417,8 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Gelecekteki sonuçlarla daha ilerideki bir zamanda uğraşılabileceği için şimdi fedakârlık yapmanın gereksiz olduğunu düşünürüm.",
       "Gelecekteki sorunlarla daha ilerideki bir vakitte ilgileneceğimi düşünerek sadece anlık kaygılarımı gidermek için eyleme geçerim.",
       "Günden güne çalışmamın belirli sonuçları olduğundan bu, benim için uzak sonuçları olan davranıştan daha önemlidir.",
-      "Bir karar verirken bunun beni gelecekte nasıl etkileyebileceği hakkında düşünürüm."
+      "Bir karar verirken bunun beni gelecekte nasıl etkileyebileceği hakkında düşünürüm.",
+      "Davranışım genellikle gelecekteki sonuçlardan etkilenir."
     ];
 
     return (
@@ -503,7 +505,8 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
       "Lütfen bu soruda 'Hiç uygun değil' seçeneğini işaretleyiniz.",
       "Yaptığım işlerde her zaman doğru adımlar atarım.",
       "Asla cinsel içerikli kitap veya dergi okumam.",
-      "Kesinlikle küfür etmem."
+      "Kesinlikle küfür etmem.",
+      "Alışverişlerde para üstünü fazla aldığım durumlarda hemen geri veririm."
     ];
 
     const options = [
@@ -580,7 +583,7 @@ export default function Questionnaire({ onSubmit }: QuestionnaireProps) {
         <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
           <div 
             className="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progress + (currentSection === 4 ? 40 * data.section4.filter(v => v !== 0).length / 29 : 0)}%` }}
+            style={{ width: `${progress + (currentSection === 4 ? 40 * data.section4.filter(v => v !== 0).length / 30 : 0)}%` }}
           ></div>
         </div>
         
