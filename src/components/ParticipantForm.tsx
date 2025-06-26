@@ -149,6 +149,9 @@ export default function ParticipantForm({ onSubmit }: ParticipantFormProps) {
           <p className="mt-8 font-medium text-center">
             Bilgilerinizi girip, &quot;Devam Et&quot; butonuna tıkladığınızda yukarıda sıralanan maddeleri onaylamış sayılacaksınız.
           </p>
+          <p className="mt-8 font-medium text-center italic">
+            Not: Eğer bir dersten ekstra puan almayacaksanız, aşağıdaki alanları boş bırakınız.
+          </p>
         </div>
       </div>
       
@@ -250,7 +253,6 @@ export default function ParticipantForm({ onSubmit }: ParticipantFormProps) {
               type="text"
               value={formData.school}
               onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-              required
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               disabled={isSubmitting}
             />
@@ -262,7 +264,6 @@ export default function ParticipantForm({ onSubmit }: ParticipantFormProps) {
               type="text"
               value={formData.studentNumber}
               onChange={(e) => setFormData({ ...formData, studentNumber: e.target.value })}
-              required
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               disabled={isSubmitting}
             />
@@ -274,7 +275,6 @@ export default function ParticipantForm({ onSubmit }: ParticipantFormProps) {
               type="text"
               value={formData.course}
               onChange={(e) => setFormData({ ...formData, course: e.target.value })}
-              required
               className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
               disabled={isSubmitting}
             />
