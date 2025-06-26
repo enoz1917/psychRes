@@ -23,21 +23,21 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     
-    // Validate required fields
-    if (!body.school || !body.studentNumber || !body.course) {
-      return NextResponse.json(
-        { success: false, error: 'All fields are required' },
-        { status: 400 }
-      );
-    }
-    
-    // Extract participant data
+    // No field validation - all fields are now optional
+    // Simply extract the data with empty string defaults
     const participantData = {
-      school: body.school || '',
-      studentNumber: body.studentNumber || '',
-      course: body.course || '',
+      school: (body.school || '').trim(),
+      studentNumber: (body.studentNumber || '').trim(),
+      course: (body.course || '').trim(),
       // removed department field
     };
+    
+    // Log what we're saving (for debugging purposes)
+    console.log('Saving participant with data:', {
+      school: participantData.school || '(empty)',
+      studentNumber: participantData.studentNumber || '(empty)',
+      course: participantData.course || '(empty)'
+    });
     
     const participantId = await saveParticipant(participantData);
     

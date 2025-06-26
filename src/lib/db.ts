@@ -69,9 +69,9 @@ export async function initDatabase() {
       await sql`
         CREATE TABLE IF NOT EXISTS participants (
           id SERIAL PRIMARY KEY,
-          student_number TEXT NOT NULL,
-          school TEXT NOT NULL,
-          course TEXT NOT NULL,
+          student_number TEXT,
+          school TEXT,
+          course TEXT,
           created_at TIMESTAMPTZ DEFAULT NOW()
         )
       `;

@@ -1,43 +1,72 @@
 import { NextResponse } from 'next/server';
-import { initDatabase, sql } from '@/lib/db';
+import { sql } from '@/lib/db';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Initialize database
-    await initDatabase();
+    console.log('Participants migration API called');
     
-    console.log('Running migration to remove department column from participants table...');
-    
-    // First check if the column exists
-    const columnExists = await sql`
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'participants' AND column_name = 'department'
+    // Check current table structure
+    console.log('Checking current participants table structure...');
+    const currentColumns = await sql`
+      SELECT column_name, is_nullable, data_type
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+      AND table_name = 'participants'
+      ORDER BY ordinal_position
     `;
     
-    if (columnExists.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'Migration not needed - department column does not exist in participants table'
-      });
+    console.log('Current participants table columns:', currentColumns);
+    
+    // Check if the columns are already nullable
+    const schoolColumn = currentColumns.find(col => col.column_name === 'school');
+    const studentNumberColumn = currentColumns.find(col => col.column_name === 'student_number');
+    const courseColumn = currentColumns.find(col => col.column_name === 'course');
+    
+    const changes = [];
+    
+    // Alter columns to be nullable if they aren't already
+    if (schoolColumn && schoolColumn.is_nullable === 'NO') {
+      console.log('Making school column nullable...');
+      await sql`ALTER TABLE participants ALTER COLUMN school DROP NOT NULL`;
+      changes.push('school column made nullable');
     }
     
-    // Remove the department column
-    await sql`
-      ALTER TABLE participants DROP COLUMN department
+    if (studentNumberColumn && studentNumberColumn.is_nullable === 'NO') {
+      console.log('Making student_number column nullable...');
+      await sql`ALTER TABLE participants ALTER COLUMN student_number DROP NOT NULL`;
+      changes.push('student_number column made nullable');
+    }
+    
+    if (courseColumn && courseColumn.is_nullable === 'NO') {
+      console.log('Making course column nullable...');
+      await sql`ALTER TABLE participants ALTER COLUMN course DROP NOT NULL`;
+      changes.push('course column made nullable');
+    }
+    
+    // Get updated table structure
+    const updatedColumns = await sql`
+      SELECT column_name, is_nullable, data_type
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+      AND table_name = 'participants'
+      ORDER BY ordinal_position
     `;
+    
+    console.log('Migration completed successfully');
     
     return NextResponse.json({
       success: true,
-      message: 'Successfully removed department column from participants table'
+      message: 'Participants table migration completed',
+      changes: changes.length > 0 ? changes : ['No changes needed - columns were already nullable'],
+      before: currentColumns,
+      after: updatedColumns
     });
-  } catch (error: unknown) {
-    console.error('Migration error:', error);
+  } catch (error) {
+    console.error('Error in participants migration:', error);
     return NextResponse.json({
       success: false,
-      error: 'Migration failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined
+      error: String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     }, { status: 500 });
   }
 } 
